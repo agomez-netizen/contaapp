@@ -12,7 +12,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ time() }}">
+ 
+
 </head>
+
+
 <body>
 
 @php
@@ -130,6 +134,13 @@
     shell.classList.toggle('collapsed');
   });
 })();
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  const els = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  els.forEach(el => new bootstrap.Tooltip(el));
+});
+
 </script>
 @stack('scripts')
 </body>

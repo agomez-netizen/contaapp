@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Avance;
 use App\Models\Proyecto;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class AvanceController extends Controller
 {
@@ -17,52 +17,60 @@ class AvanceController extends Controller
         return view('avances.create', compact('proyectos'));
     }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'fecha' => ['required', 'date'],
-            'id_proyecto' => ['required', 'integer', 'exists:proyectos,id_proyecto'],
-            'descripcion' => ['required', 'string', 'min:5'],
-        ], [
-            'id_proyecto.required' => 'Selecciona un proyecto.',
-            'descripcion.required' => 'Escribe una descripción del avance.',
-        ]);
+public function store(Request $request)
+{
+    $u = session('user'); // tu login
+    $userId = $u['id_usuario'] ?? null;
 
-        Avance::create($data);
-
-        return redirect()
-            ->route('avances.create')
-            ->with('success', 'Avance agregado ✅');
+    if (!$userId) {
+        abort(403, 'No hay usuario en sesión');
     }
 
-    public function byDate(Request $request)
-    {
-        $proyectos = Proyecto::orderBy('nombre')->get();
+    $data = $request->validate([
+        'id_proyecto' => ['required', 'integer', 'exists:proyectos,id_proyecto'],
+        'descripcion' => ['required', 'string', 'min:3'],
+    ]);
 
-        $idProyecto = $request->get('id_proyecto');
-        $desde = $request->get('desde');
-        $hasta = $request->get('hasta');
+    Avance::create([
+        'id_proyecto' => $data['id_proyecto'],
+        'descripcion' => $data['descripcion'],
+        'fecha'       => Carbon::today()->toDateString(),
+        'user_id'     => $userId,
+    ]);
 
-        $query = Avance::query()->with('proyecto')
-            ->when($idProyecto, fn($q) => $q->where('id_proyecto', $idProyecto))
-            ->when($desde, fn($q) => $q->whereDate('fecha', '>=', $desde))
-            ->when($hasta, fn($q) => $q->whereDate('fecha', '<=', $hasta))
-            ->orderBy('fecha', 'desc')
-            ->orderBy('id_avance', 'desc');
+    return redirect()->route('avances.create')->with('ok', 'Avance registrado');
+}
 
-        $avances = $query->paginate(15)->withQueryString();
 
-        // Agrupar para la vista tipo timeline
-        $agrupados = $avances->getCollection()->groupBy(fn($a) => $a->fecha);
+public function byDate(Request $request)
+{
+    $proyectos = Proyecto::orderBy('nombre')->get();
 
-        return view('avances.by_date', compact('proyectos','avances','agrupados','idProyecto','desde','hasta'));
-    }
+    // filtros (opcional)
+    $idProyecto = $request->input('id_proyecto');
+    $desde = $request->input('desde');
+    $hasta = $request->input('hasta');
 
+    $q = Avance::query()
+        ->with(['proyecto', 'usuario'])
+        ->when($idProyecto, fn($qq) => $qq->where('id_proyecto', $idProyecto))
+        ->when($desde, fn($qq) => $qq->whereDate('fecha', '>=', $desde))
+        ->when($hasta, fn($qq) => $qq->whereDate('fecha', '<=', $hasta))
+        ->orderBy('fecha', 'desc')
+        ->orderBy('created_at', 'desc');
+
+    $avances = $q->get();
+
+    // agrupado por fecha (YYYY-MM-DD)
+    $grouped = $avances->groupBy(fn($a) => Carbon::parse($a->fecha)->toDateString());
+
+    return view('avances.by_date', compact('proyectos', 'grouped', 'idProyecto', 'desde', 'hasta'));
+}
 
     public function uploadImage(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'image', 'max:5120'], // 5MB
+            'file' => ['required', 'image', 'max:5120'],
         ]);
 
         $path = $request->file('file')->store('avances', 'public');
@@ -93,8 +101,12 @@ class AvanceController extends Controller
         $topProyecto  = $rows->first();
 
         return view('avances.dashboard', compact(
-            'labels','data','desde','hasta','totalAvances','topProyecto'
+            'labels',
+            'data',
+            'desde',
+            'hasta',
+            'totalAvances',
+            'topProyecto'
         ));
     }
-
 }

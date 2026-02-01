@@ -8,7 +8,7 @@
   <div class="card shadow-sm border-0">
     <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
       <h5 class="mb-0">Editar Donación #{{ $donacion->id_donacion }}</h5>
-      <a href="{{ route('index') }}" class="btn btn-sm btn-light">Volver</a>
+      <a href="{{ route('donaciones.index') }}" class="btn btn-sm btn-light">Volver</a>
     </div>
 
     <div class="card-body">

@@ -11,13 +11,19 @@ class Avance extends Model
 
     protected $fillable = [
         'id_proyecto',
-        'fecha',
         'descripcion',
+        'fecha',
+        'user_id',
     ];
 
-    // Relación (ajusta el nombre del modelo Proyecto si es distinto)
     public function proyecto()
     {
-        return $this->belongsTo(Proyecto::class, 'id_proyecto', 'id_proyecto');
+        return $this->belongsTo(Proyecto::class, 'id_proyecto');
     }
+
+    public function usuario()
+    {
+        return $this->belongsTo(Usuario::class, 'user_id', 'id_usuario');
+    }
+
 }

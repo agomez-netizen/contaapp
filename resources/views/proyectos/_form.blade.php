@@ -1,23 +1,45 @@
-@csrf
+{{-- resources/views/avances/_form.blade.php --}}
 
+{{-- PROYECTO --}}
 <div class="mb-3">
-  <label class="form-label">Nombre *</label>
-  <input type="text" name="nombre" class="form-control @error('nombre') is-invalid @enderror"
-         value="{{ old('nombre', $proyecto->nombre ?? '') }}" maxlength="120" required>
-  @error('nombre') <div class="invalid-feedback">{{ $message }}</div> @enderror
+  <label class="form-label">Proyecto <span class="text-danger">*</span></label>
+
+  <select name="id_proyecto"
+          class="form-select @error('id_proyecto') is-invalid @enderror"
+          required>
+    <option value="">— Seleccionar —</option>
+    @foreach($proyectos as $p)
+      <option value="{{ $p->id_proyecto }}"
+        {{ old('id_proyecto') == $p->id_proyecto ? 'selected' : '' }}>
+        {{ $p->nombre }}
+      </option>
+    @endforeach
+  </select>
+
+  @error('id_proyecto')
+    <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
 </div>
 
+{{-- DESCRIPCIÓN (TinyMCE) --}}
 <div class="mb-3">
-  <label class="form-label">Descripción</label>
-  <textarea name="descripcion" rows="4"
-    class="form-control @error('descripcion') is-invalid @enderror"
-    maxlength="2000">{{ old('descripcion', $proyecto->descripcion ?? '') }}</textarea>
-  @error('descripcion') <div class="invalid-feedback">{{ $message }}</div> @enderror
+  <label class="form-label">Descripción <span class="text-danger">*</span></label>
+
+  {{-- ID obligatorio para TinyMCE --}}
+  <textarea id="descripcion"
+            name="descripcion"
+            class="form-control @error('descripcion') is-invalid @enderror"
+            rows="6"
+            required>{{ old('descripcion') }}</textarea>
+
+  @error('descripcion')
+    <div class="invalid-feedback">{{ $message }}</div>
+  @enderror
 </div>
 
-<div class="form-check mb-3">
-  <input class="form-check-input" type="checkbox" name="activo" value="1"
-         id="activo"
-         {{ old('activo', ($proyecto->activo ?? true)) ? 'checked' : '' }}>
-  <label class="form-check-label" for="activo">Activo</label>
+{{-- BOTÓN --}}
+<div class="text-end">
+  <button type="submit" class="btn btn-primary">
+    ✚ Agregar
+  </button>
 </div>

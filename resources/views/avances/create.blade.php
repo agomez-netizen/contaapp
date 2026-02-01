@@ -29,61 +29,29 @@
 
   <div class="card shadow-sm border-0">
     <div class="card-body">
-      <form method="POST" action="{{ route('avances.store') }}">
-        @csrf
+<form action="{{ route('avances.store') }}" method="POST">
+  @csrf
 
-        <div class="row g-3 align-items-end">
+  <div class="mb-3">
+    <label>Proyecto</label>
+    <select name="id_proyecto" class="form-select" required>
+      <option value="">— Seleccionar —</option>
+      @foreach($proyectos as $p)
+        <option value="{{ $p->id_proyecto }}">{{ $p->nombre }}</option>
+      @endforeach
+    </select>
+  </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Fecha</label>
-            <input type="date" name="fecha"
-                   value="{{ old('fecha', date('Y-m-d')) }}"
-                   class="form-control @error('fecha') is-invalid @enderror">
-            @error('fecha') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+  <div class="mb-3">
+    <label>Descripción</label>
+    <textarea name="descripcion" class="form-control" rows="4" required></textarea>
+  </div>
 
-          <div class="col-md-6">
-            <label class="form-label">Proyecto</label>
-            <select name="id_proyecto" class="form-select @error('id_proyecto') is-invalid @enderror">
-              <option value="">— Seleccionar —</option>
-              @foreach($proyectos as $p)
-                <option value="{{ $p->id_proyecto }}" @selected(old('id_proyecto') == $p->id_proyecto)>
-                  {{ $p->nombre }}
-                </option>
-              @endforeach
-            </select>
-            @error('id_proyecto') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+  <button class="btn btn-primary">
+    ✚ Agregar
+  </button>
+</form>
 
-          <div class="col-md-3 text-md-end">
-            <button class="btn btn-success px-4" type="submit">
-              ➕ Agregar
-            </button>
-          </div>
-
-          <div class="col-12">
-            <label class="form-label">Descripción</label>
-
-            {{--<textarea id="descripcion" name="descripcion" rows="8"
-              class="form-control @error('descripcion') is-invalid @enderror"
-              placeholder="Escribe el avance...">{{ old('descripcion') }}</textarea>
-
-            @error('descripcion') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            --}}
-
-            <textarea name="descripcion" rows="4"
-                      class="form-control @error('descripcion') is-invalid @enderror"
-                      placeholder="Escribe el avance...">{{ old('descripcion') }}</textarea>
-            @error('descripcion') <div class="invalid-feedback">{{ $message }}</div> @enderror
-
-
-            <div class="form-text">
-              .
-            </div>
-          </div>
-
-        </div>
-      </form>
     </div>
   </div>
 
