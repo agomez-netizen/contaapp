@@ -145,4 +145,9 @@ Route::post('/donaciones/{id}/toggle-bloqueo', [DonacionController::class, 'togg
     Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
 
 
+Route::get('/avances/export/excel', [AvanceController::class, 'exportExcel'])
+    ->name('avances.export.excel');
+
+
+
 });

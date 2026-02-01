@@ -3,10 +3,27 @@
 @section('content')
 <div class="container">
 
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0">Avances por fecha</h3>
-    <a href="{{ route('avances.create') }}" class="btn btn-outline-secondary">← Registrar avance</a>
+ <div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Avances por fecha</h3>
+
+  <div class="d-flex gap-2">
+    <a
+      href="{{ route('avances.export.excel', request()->all()) }}"
+      class="btn btn-success"
+    >
+      📥 Exportar Excel
+    </a>
+
+    <a
+      href="{{ route('avances.create') }}"
+      class="btn btn-outline-secondary"
+    >
+      ← Registrar avance
+    </a>
   </div>
+</div>
+
+
 
   {{-- Filtros --}}
   <form method="GET" action="{{ route('avances.byDate') }}" class="card p-3 mb-3">

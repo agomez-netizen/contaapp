@@ -8,6 +8,8 @@ use App\Models\Proyecto;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class AvanceController extends Controller
 {
@@ -109,4 +111,43 @@ public function byDate(Request $request)
             'topProyecto'
         ));
     }
+
+
+
+public function exportExcel(Request $request)
+{
+    $desde      = $request->input('desde');
+    $hasta      = $request->input('hasta');
+    $idProyecto = $request->input('id_proyecto');
+
+    $avances = Avance::with(['proyecto', 'usuario'])
+        ->when($idProyecto, fn($q) => $q->where('id_proyecto', $idProyecto))
+        ->when($desde, fn($q) => $q->whereDate('fecha', '>=', $desde))
+        ->when($hasta, fn($q) => $q->whereDate('fecha', '<=', $hasta))
+        ->orderBy('fecha', 'desc')
+        ->get();
+
+    $rows = [[
+        'Fecha',
+        'Proyecto',
+        'Descripción',
+        'Usuario',
+        'Hora',
+    ]];
+
+    foreach ($avances as $a) {
+        $rows[] = [
+            $a->fecha,
+            $a->proyecto->nombre ?? '—',
+            $a->descripcion,
+            $a->usuario->nombre ?? 'Usuario eliminado',
+            $a->created_at ? $a->created_at->format('H:i') : '',
+        ];
+    }
+
+    return Excel::download(new \App\Exports\ArrayExport($rows), 'avances.xlsx');
+
+}
+
+
 }

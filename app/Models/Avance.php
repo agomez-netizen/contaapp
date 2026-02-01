@@ -9,6 +9,7 @@ class Avance extends Model
     protected $table = 'avances';
     protected $primaryKey = 'id_avance';
 
+
     protected $fillable = [
         'id_proyecto',
         'descripcion',
