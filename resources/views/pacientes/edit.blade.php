@@ -104,12 +104,15 @@
               $muns = ['Guatemala','Mixco','Villa Nueva','Jocotenango','Chinautla','Escuintla'];
               $munSel = old('municipio', $paciente->municipio);
             @endphp
-            <select name="municipio" class="form-select" required>
-              <option value="">Seleccione</option>
-              @foreach($muns as $mun)
-                <option value="{{ $mun }}" {{ $munSel==$mun?'selected':'' }}>{{ $mun }}</option>
-              @endforeach
-            </select>
+<input
+    type="text"
+    name="municipio"
+    class="form-control"
+    value="{{ $munSel ?? '' }}"
+    placeholder="Ingrese municipio"
+    required
+>
+
           </div>
 
           <div class="col-md-4">

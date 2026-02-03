@@ -105,21 +105,24 @@
             <label class="form-label">Departamento</label>
             <select name="departamento" class="form-select" required>
               <option value="">Seleccione</option>
-              @foreach(['Guatemala','Escuintla','Sacatepéquez','Chimaltenango','Quetzaltenango','Alta Verapaz','Baja Verapaz','Petén','Izabal'] as $dep)
+              @foreach(['Guatemala','El Progreso','Sacatepéquez','Chimaltenango','Escuintla','Santa Rosa','Sololá','Totonicapán','Quetzaltenango','Suchitepéquez','Retalhuleu','San Marcos','Huehuetenango','Quiché','Baja Verapaz','Alta Verapaz','Petén','Izabal','Zacapa','Chiquimula','Jalapa','Jutiapa'] as $dep)
                 <option value="{{ $dep }}" {{ old('departamento')==$dep?'selected':'' }}>{{ $dep }}</option>
               @endforeach
             </select>
           </div>
 
-          <div class="col-md-4">
-            <label class="form-label">Municipio</label>
-            <select name="municipio" class="form-select" required>
-              <option value="">Seleccione</option>
-              @foreach(['Guatemala','Mixco','Villa Nueva','Jocotenango','Chinautla','Escuintla'] as $mun)
-                <option value="{{ $mun }}" {{ old('municipio')==$mun?'selected':'' }}>{{ $mun }}</option>
-              @endforeach
-            </select>
-          </div>
+<div class="col-md-4">
+    <label class="form-label">Municipio</label>
+    <input
+        type="text"
+        name="municipio"
+        class="form-control"
+        value="{{ old('municipio') }}"
+        placeholder="Ingrese el municipio"
+        required
+    >
+</div>
+
 
           <div class="col-md-4">
             <label class="form-label">Tipo de Consulta</label>

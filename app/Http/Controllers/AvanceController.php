@@ -131,16 +131,18 @@ public function exportExcel(Request $request)
         'Fecha',
         'Proyecto',
         'Descripción',
-        'Usuario',
+        'Nombre',
+        'Apellido',
         'Hora',
     ]];
 
     foreach ($avances as $a) {
         $rows[] = [
             $a->fecha,
-            $a->proyecto->nombre ?? '—',
+            $a->proyecto->nombre ?? '—' ,
             $a->descripcion,
             $a->usuario->nombre ?? 'Usuario eliminado',
+            $a->usuario->apellido ?? 'Usuario eliminado',
             $a->created_at ? $a->created_at->format('H:i') : '',
         ];
     }

@@ -33,6 +33,9 @@
   $canAvances    = $isAdmin || $isGestor || $isSecretaria || $isProyectos;
   $canMetricas   = $isAdmin || $isGestor || $isDirector;
 
+  // Oficina (si quieres limitarlo por rol, aquí lo haces)
+  $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isDirector; // ajustable
+
   // Mantenimientos
   $canMaint      = $isAdmin || $isGestor;
 
@@ -53,6 +56,7 @@
   $idPacientes      = "menuPacientes-{$scope}";
   $idMedios         = "menuMedios-{$scope}";
   $idProyectosAapos = "menuProyectosAapos-{$scope}";
+  $idOficina        = "menuOficina-{$scope}";
   $idMantenimientos = "menuMantenimientos-{$scope}";
 
   // Para abrir submenús cuando estás dentro
@@ -64,6 +68,9 @@
           || request()->routeIs('presupuestos.*')
           || request()->routeIs('facturas.*')
           || request()->routeIs('proyectosaapos.*');
+
+  $ofOpen = request()->routeIs('oficina.antigua.*')
+         || request()->routeIs('oficina.rambla.*');
 
   $maintOpen = request()->routeIs('proyectos.*')
             || request()->routeIs('tipos_donacion.*')
@@ -191,10 +198,7 @@
       <span class="ms-auto navcaret">▾</span>
     </button>
 
-    <div class="collapse {{ $medOpen ? 'show' : '';
-
-
- }}" id="{{ $idMedios }}">
+    <div class="collapse {{ $medOpen ? 'show' : '' }}" id="{{ $idMedios }}">
       <div class="d-grid gap-1 ms-4 mt-1">
         <a href="{{ route('medios.index') }}"
            class="navitem {{ request()->routeIs('medios.index') ? 'active' : '' }}"
@@ -252,6 +256,50 @@
             <span>Métricas</span>
           </a>
         @endif
+
+      </div>
+    </div>
+  @endif
+
+  {{-- ================= OFICINA ================= --}}
+  @if($canOficina)
+    <button type="button"
+            class="navitem btn-reset {{ $ofOpen ? 'active' : '' }}"
+            data-bs-toggle="collapse"
+            data-bs-target="#{{ $idOficina }}"
+            aria-expanded="{{ $ofOpen ? 'true' : 'false' }}"
+            aria-controls="{{ $idOficina }}"
+            data-bs-toggle="tooltip"
+            data-bs-placement="right"
+            data-bs-container="body"
+            title="Documentos por oficina">
+      <span class="navicon">🏢</span>
+      <span>Oficina</span>
+      <span class="ms-auto navcaret">▾</span>
+    </button>
+
+    <div class="collapse {{ $ofOpen ? 'show' : '' }}" id="{{ $idOficina }}">
+      <div class="d-grid gap-1 ms-4 mt-1">
+
+        <a href="{{ route('oficina.antigua.index') }}"
+           class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
+           data-bs-toggle="tooltip"
+           data-bs-placement="right"
+           data-bs-container="body"
+           title="Documentos de Oficina Antigua">
+          <span class="navicon">📂</span>
+          <span>Antigua</span>
+        </a>
+
+        <a href="{{ route('oficina.rambla.index') }}"
+           class="navitem {{ request()->routeIs('oficina.rambla.*') ? 'active' : '' }}"
+           data-bs-toggle="tooltip"
+           data-bs-placement="right"
+           data-bs-container="body"
+           title="Documentos de Oficina Zona 14">
+          <span class="navicon">📂</span>
+          <span>Rambla</span>
+        </a>
 
       </div>
     </div>

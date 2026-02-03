@@ -16,9 +16,12 @@ use App\Http\Controllers\MediosController;
 use App\Http\Controllers\ProyectosAAPOSController;
 use App\Http\Controllers\CalidadVidaController;
 use App\Http\Controllers\AvanceController;
+
+// ✅ Estos dos te faltaban en el archivo que me pasaste (si ya existen, perfecto)
+use App\Http\Controllers\DocumentoAntiguaController;
+use App\Http\Controllers\DocumentoZona14Controller;
+
 use Illuminate\Support\Facades\Schedule;
-
-
 
 Route::get('/', function () {
     return session()->has('user')
@@ -37,14 +40,13 @@ Route::middleware(['auth.custom'])->group(function () {
     // =========================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Grafico
     Route::get('/dashboard/scatter', [DashboardController::class, 'scatter'])
         ->name('dashboard.scatter');
 
     // =========================
-    // DONACIONES (ADMIN + GESTOR/DONACIONES)
+    // DONACIONES (ADMIN + GESTOR + DONACIONES)
     // =========================
-    Route::middleware(['role:ADMIN,GESTOR'])->group(function () {
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES'])->group(function () {
 
         Route::get('/donaciones/index', [DonacionController::class, 'index'])->name('donaciones.index');
         Route::get('/donaciones/crear', [DonacionController::class, 'create'])->name('donaciones.create');
@@ -56,16 +58,18 @@ Route::middleware(['auth.custom'])->group(function () {
 
         Route::get('/donaciones/{id}', [DonacionController::class, 'show'])->name('donaciones.show');
 
-
-        // Exportaciones (si el gestor también puede exportar, se quedan aquí)
         Route::get('/donaciones/export/excel', [DashboardController::class, 'exportExcel'])
             ->name('donaciones.export.excel');
 
         Route::get('/donaciones/export/pdf', [DashboardController::class, 'exportPdf'])
             ->name('donaciones.export.pdf');
 
+        Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
 
+        Route::post('/donaciones/{id}/toggle-bloqueo', [DonacionController::class, 'toggleBloqueo'])
+            ->name('donaciones.toggleBloqueo');
 
+        Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
     });
 
     // =========================
@@ -76,30 +80,27 @@ Route::middleware(['auth.custom'])->group(function () {
     });
 
     // =========================
-    // MANTENIMIENTOS (SOLO ADMIN)
+    // MANTENIMIENTOS (ADMIN + GESTOR + DONACIONES)
     // =========================
-    Route::middleware(['role:ADMIN'])->group(function () {
-
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES'])->group(function () {
         Route::resource('proyectos', ProyectoController::class);
         Route::resource('tipos_donacion', TipoDonacionController::class);
-        Route::resource('usuarios', UsuarioController::class);
-        Route::resource('roles', RolController::class);
 
         Route::resource('ubicaciones', UbicacionController::class)
             ->parameters(['ubicaciones' => 'ubicacion']);
     });
 
-    Route::get('/pacientes', [PacientesController::class, 'create'])->name('pacientes.create');
-    Route::get('/medios', [MediosController::class, 'create'])->name('medios.create');
-    Route::get('/proyectosaapos', [ProyectosAAPOSController::class, 'index'])->name('proyectosaapos.index');
+    // =========================
+    // MANTENIMIENTOS (SOLO ADMIN)
+    // =========================
+    Route::middleware(['role:ADMIN'])->group(function () {
+        Route::resource('usuarios', UsuarioController::class);
+        Route::resource('roles', RolController::class);
+    });
 
-
-    Route::get('/proyectosaapos/calidadvida', [CalidadVidaController::class, 'index'])->name('calidadvida.index');
-    Route::post('/proyectosaapos/calidadvida', [CalidadVidaController::class, 'store'])->name('calidadvida.store');
-    Route::put('/proyectosaapos/calidadvida/{item}', [CalidadVidaController::class, 'update'])->name('calidadvida.update');
-    Route::delete('/proyectosaapos/calidadvida/{item}', [CalidadVidaController::class, 'destroy'])->name('calidadvida.destroy');
-
-
+    // =========================
+    // PACIENTES / MEDIOS (según tu lógica actual, están abiertos a logueados)
+    // =========================
     Route::get('/pacientes', [PacientesController::class, 'index'])->name('pacientes.index');
     Route::get('/pacientes/crear', [PacientesController::class, 'create'])->name('pacientes.create');
     Route::post('/pacientes', [PacientesController::class, 'store'])->name('pacientes.store');
@@ -107,6 +108,10 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/pacientes/{id}/editar', [PacientesController::class, 'edit'])->name('pacientes.edit');
     Route::put('/pacientes/{id}', [PacientesController::class, 'update'])->name('pacientes.update');
     Route::delete('/pacientes/{id}', [PacientesController::class, 'destroy'])->name('pacientes.destroy');
+    Route::get('/pacientes/{id}', [PacientesController::class, 'show'])->name('pacientes.show');
+
+    Route::get('/pacientes/export/excel', [PacientesController::class, 'exportExcel'])
+        ->name('pacientes.export.excel');
 
     Route::get('/medios', [MediosController::class, 'index'])->name('medios.index');
     Route::get('/medios/crear', [MediosController::class, 'create'])->name('medios.create');
@@ -114,40 +119,43 @@ Route::middleware(['auth.custom'])->group(function () {
 
     Route::get('/medios/{id}/editar', [MediosController::class, 'edit'])->name('medios.edit');
     Route::put('/medios/{id}', [MediosController::class, 'update'])->name('medios.update');
-
     Route::delete('/medios/{id}', [MediosController::class, 'destroy'])->name('medios.destroy');
-
-    Route::get('/pacientes/{id}', [PacientesController::class, 'show'])->name('pacientes.show');
-
-        Route::get('/pacientes/export/excel', [PacientesController::class, 'exportExcel'])
-    ->name('pacientes.export.excel');
-
-
 
     Route::get('/medios/{id}', [MediosController::class, 'show'])->name('medios.show');
     Route::get('/medios/export/excel', [MediosController::class, 'exportExcel'])->name('medios.export.excel');
 
+    // =========================
+    // PROYECTOS AAPOS / CALIDAD VIDA
+    // =========================
+    Route::get('/proyectosaapos', [ProyectosAAPOSController::class, 'index'])->name('proyectosaapos.index');
 
+    Route::get('/proyectosaapos/calidadvida', [CalidadVidaController::class, 'index'])->name('calidadvida.index');
+    Route::post('/proyectosaapos/calidadvida', [CalidadVidaController::class, 'store'])->name('calidadvida.store');
+    Route::put('/proyectosaapos/calidadvida/{item}', [CalidadVidaController::class, 'update'])->name('calidadvida.update');
+    Route::delete('/proyectosaapos/calidadvida/{item}', [CalidadVidaController::class, 'destroy'])->name('calidadvida.destroy');
+
+    // =========================
+    // AVANCES
+    // =========================
     Route::get('/avances', [AvanceController::class, 'create'])->name('avances.create');
     Route::post('/avances', [AvanceController::class, 'store'])->name('avances.store');
     Route::get('/avances/por-fecha', [AvanceController::class, 'byDate'])->name('avances.byDate');
+
     Route::post('/avances/upload-image', [AvanceController::class, 'uploadImage'])
-  ->name('avances.uploadImage');
+        ->name('avances.uploadImage');
 
     Route::get('/avances/dashboard', [AvanceController::class, 'dashboard'])->name('avances.dashboard');
 
+    Route::get('/avances/export/excel', [AvanceController::class, 'exportExcel'])
+        ->name('avances.export.excel');
 
-    Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
+    // =========================
+    // OFICINA
+    // =========================
+    Route::get('/oficina/antigua', [DocumentoAntiguaController::class, 'index'])
+        ->name('oficina.antigua.index');
 
-Route::post('/donaciones/{id}/toggle-bloqueo', [DonacionController::class, 'toggleBloqueo'])
-  ->name('donaciones.toggleBloqueo');
-
-    Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
-
-
-Route::get('/avances/export/excel', [AvanceController::class, 'exportExcel'])
-    ->name('avances.export.excel');
-
-
+    Route::get('/oficina/rambla', [DocumentoZona14Controller::class, 'index'])
+        ->name('oficina.rambla.index');
 
 });
