@@ -22,7 +22,7 @@
   $isDirector   = $rolName === 'DIRECTOR';
 
   // Permisos por módulo
-  $canDashboard  = $isAdmin || $isGestor || $isDirector;
+  $canDashboard  = $isAdmin || $isGestor || $isDirector || $isSecretaria ;
   $canDonaciones = $isAdmin || $isGestor;
   $canPacientes  = $isAdmin || $isGestor || $isSecretaria;
   $canMedios     = $isAdmin || $isGestor || $isSecretaria;
