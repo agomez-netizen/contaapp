@@ -226,7 +226,7 @@
             data-bs-container="body"
             title="Módulo de proyectos">
       <span class="navicon">📌</span>
-      <span>Proyectos</span>
+      <span>SGA</span>
       <span class="ms-auto navcaret">▾</span>
     </button>
 
