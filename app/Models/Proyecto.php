@@ -15,4 +15,15 @@ class Proyecto extends Model
         'descripcion',
         'activo',
     ];
+
+    public function usuarios()
+    {
+        return $this->belongsToMany(
+            Usuario::class,
+            'proyecto_usuario',
+            'id_proyecto',
+            'id_usuario'
+        )->withTimestamps();
+    }
+
 }

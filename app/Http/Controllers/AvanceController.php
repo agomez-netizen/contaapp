@@ -6,70 +6,114 @@ use Illuminate\Http\Request;
 use App\Models\Avance;
 use App\Models\Proyecto;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-
-
 
 class AvanceController extends Controller
 {
     public function create()
     {
-        $proyectos = Proyecto::orderBy('nombre')->get();
+        $u = session('user');
+        $userId = $u['id_usuario'] ?? null;
+
+        if (!$userId) abort(403, 'No hay usuario en sesión');
+
+        $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+        $rolId   = (int)($u['id_rol'] ?? 0);
+        $isAdmin = ($rolId === 1) || ($rolName === 'ADMIN');
+
+        $proyectos = $isAdmin
+            ? Proyecto::where('activo', 1)->orderBy('nombre')->get()
+            : Proyecto::where('activo', 1)
+                ->whereHas('usuarios', function ($q) use ($userId) {
+                    $q->where('usuarios.id_usuario', $userId);
+                })
+                ->orderBy('nombre')
+                ->get();
+
         return view('avances.create', compact('proyectos'));
     }
 
 public function store(Request $request)
 {
-    $u = session('user'); // tu login
+    $u = session('user');
     $userId = $u['id_usuario'] ?? null;
+    if (!$userId) abort(403, 'No hay usuario en sesión');
 
-    if (!$userId) {
-        abort(403, 'No hay usuario en sesión');
-    }
+    $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+    $rolId   = (int)($u['id_rol'] ?? 0);
+    $isAdmin = ($rolId === 1) || ($rolName === 'ADMIN');
 
     $data = $request->validate([
-        'id_proyecto' => ['required', 'integer', 'exists:proyectos,id_proyecto'],
-        'descripcion' => ['required', 'string', 'min:5'],
+        'id_proyecto' => ['required', 'integer'],
+        'descripcion' => ['required', 'string'],
+        'fecha'       => ['nullable', 'date'],
     ]);
+
+    if (!$isAdmin) {
+        $allowed = Proyecto::where('id_proyecto', $data['id_proyecto'])
+            ->whereHas('usuarios', fn($q) => $q->where('usuarios.id_usuario', $userId))
+            ->exists();
+
+        if (!$allowed) abort(403, 'Proyecto no asignado a tu usuario');
+    }
+
+    $fechaInput = $data['fecha'] ?? null;
+    $fecha = $fechaInput
+        ? Carbon::parse($fechaInput)->toDateString()
+        : Carbon::now()->toDateString();
 
     Avance::create([
-        'id_proyecto' => $data['id_proyecto'],
+        'id_proyecto' => (int)$data['id_proyecto'],
         'descripcion' => $data['descripcion'],
-        'fecha'       => Carbon::today()->toDateString(),
-        'user_id'     => $userId,
+        'fecha'       => $fecha,
+        'user_id'     => (int)$userId,
     ]);
 
-    return redirect()->route('avances.create')->with('ok', 'Avance registrado');
+    return redirect()
+        ->route('avances.create')
+        ->with('success', '✅ Avance guardado correctamente.');
 }
 
 
-public function byDate(Request $request)
-{
-    $proyectos = Proyecto::orderBy('nombre')->get();
+    public function byDate(Request $request)
+    {
+        $u = session('user');
+        $userId = $u['id_usuario'] ?? null;
+        if (!$userId) abort(403, 'No hay usuario en sesión');
 
-    // filtros (opcional)
-    $idProyecto = $request->input('id_proyecto');
-    $desde = $request->input('desde');
-    $hasta = $request->input('hasta');
+        $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+        $rolId   = (int)($u['id_rol'] ?? 0);
+        $isAdmin = ($rolId === 1) || ($rolName === 'ADMIN');
 
-    $q = Avance::query()
-        ->with(['proyecto', 'usuario'])
-        ->when($idProyecto, fn($qq) => $qq->where('id_proyecto', $idProyecto))
-        ->when($desde, fn($qq) => $qq->whereDate('fecha', '>=', $desde))
-        ->when($hasta, fn($qq) => $qq->whereDate('fecha', '<=', $hasta))
-        ->orderBy('fecha', 'desc')
-        ->orderBy('created_at', 'desc');
+        // Proyectos disponibles para filtros (solo los permitidos)
+        $proyectos = $isAdmin
+            ? Proyecto::orderBy('nombre')->get()
+            : Proyecto::whereHas('usuarios', fn($q) => $q->where('usuarios.id_usuario', $userId))
+                ->orderBy('nombre')
+                ->get();
 
-    $avances = $q->get();
+        $idProyecto = $request->input('id_proyecto');
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
 
-    // agrupado por fecha (YYYY-MM-DD)
-    $grouped = $avances->groupBy(fn($a) => Carbon::parse($a->fecha)->toDateString());
+        $q = Avance::query()
+            ->with(['proyecto', 'usuario'])
+            ->when(!$isAdmin, function ($qq) use ($userId) {
+                $qq->whereHas('proyecto.usuarios', fn($q2) => $q2->where('usuarios.id_usuario', $userId));
+            })
+            ->when($idProyecto, fn($qq) => $qq->where('id_proyecto', $idProyecto))
+            ->when($desde, fn($qq) => $qq->whereDate('fecha', '>=', $desde))
+            ->when($hasta, fn($qq) => $qq->whereDate('fecha', '<=', $hasta))
+            ->orderBy('fecha', 'desc')
+            ->orderBy('created_at', 'desc');
 
-    return view('avances.by_date', compact('proyectos', 'grouped', 'idProyecto', 'desde', 'hasta'));
-}
+        $avances = $q->get();
+        $grouped = $avances->groupBy(fn($a) => Carbon::parse($a->fecha)->toDateString());
+
+        return view('avances.by_date', compact('proyectos', 'grouped', 'idProyecto', 'desde', 'hasta'));
+    }
 
     public function uploadImage(Request $request)
     {
@@ -114,89 +158,76 @@ public function byDate(Request $request)
         ));
     }
 
+    public function exportExcel(Request $request)
+    {
+        $desde      = $request->input('desde');
+        $hasta      = $request->input('hasta');
+        $idProyecto = $request->input('id_proyecto');
 
+        $avances = Avance::with(['proyecto', 'usuario'])
+            ->when($idProyecto, fn($q) => $q->where('id_proyecto', $idProyecto))
+            ->when($desde, fn($q) => $q->whereDate('fecha', '>=', $desde))
+            ->when($hasta, fn($q) => $q->whereDate('fecha', '<=', $hasta))
+            ->orderBy('fecha', 'desc')
+            ->get();
 
-public function exportExcel(Request $request)
-{
-    $desde      = $request->input('desde');
-    $hasta      = $request->input('hasta');
-    $idProyecto = $request->input('id_proyecto');
+        $rows = [[
+            'Fecha',
+            'Proyecto',
+            'Descripción',
+            'Nombre',
+            'Apellido',
+            'Hora',
+        ]];
 
-    $avances = Avance::with(['proyecto', 'usuario'])
-        ->when($idProyecto, fn($q) => $q->where('id_proyecto', $idProyecto))
-        ->when($desde, fn($q) => $q->whereDate('fecha', '>=', $desde))
-        ->when($hasta, fn($q) => $q->whereDate('fecha', '<=', $hasta))
-        ->orderBy('fecha', 'desc')
-        ->get();
+        foreach ($avances as $a) {
+            $rows[] = [
+                $a->fecha,
+                $a->proyecto->nombre ?? '—',
+                $this->plainText($a->descripcion),
+                $a->usuario->nombre ?? 'Usuario eliminado',
+                $a->usuario->apellido ?? 'Usuario eliminado',
+                $a->created_at ? $a->created_at->format('H:i') : '',
+            ];
+        }
 
-    $rows = [[
-        'Fecha',
-        'Proyecto',
-        'Descripción',
-        'Nombre',
-        'Apellido',
-        'Hora',
-    ]];
-
-    foreach ($avances as $a) {
-        $rows[] = [
-            $a->fecha,
-            $a->proyecto->nombre ?? '—' ,
-            $this->plainText($a->descripcion),
-            $a->usuario->nombre ?? 'Usuario eliminado',
-            $a->usuario->apellido ?? 'Usuario eliminado',
-            $a->created_at ? $a->created_at->format('H:i') : '',
-        ];
+        return Excel::download(new \App\Exports\ArrayExport($rows), 'avances.xlsx');
     }
 
-    return Excel::download(new \App\Exports\ArrayExport($rows), 'avances.xlsx');
-
-}
-
-   private function plainText(?string $html): string
+    private function plainText(?string $html): string
     {
         if (!$html) return '';
 
-        // 1) decode &nbsp; &amp; etc.
         $text = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        // 2) quita tags
         $text = strip_tags($text);
-
-        // 3) normaliza espacios
-        $text = preg_replace('/[ \t]+/', ' ', $text);       // espacios repetidos
-        $text = preg_replace("/\r\n|\r|\n/", "\n", $text);  // saltos normalizados
-        $text = trim($text);
-
-        return $text;
+        $text = preg_replace('/[ \t]+/', ' ', $text);
+        $text = preg_replace("/\r\n|\r|\n/", "\n", $text);
+        return trim($text);
     }
 
     public function exportPdf(Request $request)
-{
-    $proyectos = Proyecto::orderBy('nombre')->get();
+    {
+        $proyectos = Proyecto::orderBy('nombre')->get();
 
-    $idProyecto = $request->input('id_proyecto');
-    $desde = $request->input('desde');
-    $hasta = $request->input('hasta');
+        $idProyecto = $request->input('id_proyecto');
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
 
-    $avances = Avance::query()
-        ->with(['proyecto', 'usuario'])
-        ->when($idProyecto, fn($qq) => $qq->where('id_proyecto', $idProyecto))
-        ->when($desde, fn($qq) => $qq->whereDate('fecha', '>=', $desde))
-        ->when($hasta, fn($qq) => $qq->whereDate('fecha', '<=', $hasta))
-        ->orderBy('fecha', 'desc')
-        ->orderBy('created_at', 'desc')
-        ->get();
+        $avances = Avance::query()
+            ->with(['proyecto', 'usuario'])
+            ->when($idProyecto, fn($qq) => $qq->where('id_proyecto', $idProyecto))
+            ->when($desde, fn($qq) => $qq->whereDate('fecha', '>=', $desde))
+            ->when($hasta, fn($qq) => $qq->whereDate('fecha', '<=', $hasta))
+            ->orderBy('fecha', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    $grouped = $avances->groupBy(fn($a) => Carbon::parse($a->fecha)->toDateString());
+        $grouped = $avances->groupBy(fn($a) => Carbon::parse($a->fecha)->toDateString());
 
-    $pdf = Pdf::loadView('avances.pdf_by_date', compact(
-        'proyectos', 'grouped', 'idProyecto', 'desde', 'hasta'
-    ))->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('avances.pdf_by_date', compact(
+            'proyectos', 'grouped', 'idProyecto', 'desde', 'hasta'
+        ))->setPaper('a4', 'portrait');
 
-    return $pdf->download('avances.pdf');
-}
-
-
-
+        return $pdf->download('avances.pdf');
+    }
 }

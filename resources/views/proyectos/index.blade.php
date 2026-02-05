@@ -4,16 +4,27 @@
 @section('content')
 <div class="container py-4">
 
-  <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
-    <div>
-      <h3 class="fw-bold mb-0">📁 Proyectos</h3>
-      <div class="text-muted">Mantenimiento</div>
-    </div>
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-3">
 
-    <a href="{{ route('proyectos.create') }}" class="btn btn-primary">
+  <div>
+    <h3 class="fw-bold mb-0">📁 Proyectos</h3>
+    <div class="text-muted">Mantenimiento</div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <a href="{{ route('asignaciones.proyectos_usuarios.index') }}"
+       class="btn btn-outline-primary">
+      Asignar proyectos
+    </a>
+
+    <a href="{{ route('proyectos.create') }}"
+       class="btn btn-primary">
       + Nuevo proyecto
     </a>
   </div>
+
+</div>
+
 
   @if(session('ok'))
     <div class="alert alert-success">{{ session('ok') }}</div>

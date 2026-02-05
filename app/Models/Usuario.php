@@ -25,4 +25,14 @@ class Usuario extends Model
     {
         return $this->belongsTo(Rol::class, 'id_rol', 'id_rol');
     }
+
+    public function proyectos()
+    {
+        return $this->belongsToMany(
+            Proyecto::class,
+            'proyecto_usuario',
+            'id_usuario',
+            'id_proyecto'
+        )->withTimestamps();
+    }
 }

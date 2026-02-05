@@ -16,6 +16,7 @@ use App\Http\Controllers\MediosController;
 use App\Http\Controllers\ProyectosAAPOSController;
 use App\Http\Controllers\CalidadVidaController;
 use App\Http\Controllers\AvanceController;
+ use App\Http\Controllers\ProyectoUsuarioController;
 
 // ✅ Estos dos te faltaban en el archivo que me pasaste (si ya existen, perfecto)
 use App\Http\Controllers\DocumentoAntiguaController;
@@ -159,6 +160,21 @@ Route::middleware(['auth.custom'])->group(function () {
         ->name('oficina.rambla.index');
 
         Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
+
+
+
+
+
+Route::get('/asignaciones/proyectos-usuarios', [ProyectoUsuarioController::class, 'index'])
+    ->name('asignaciones.proyectos_usuarios.index');
+
+Route::get('/asignaciones/proyectos-usuarios/{id_usuario}/edit', [ProyectoUsuarioController::class, 'edit'])
+    ->name('asignaciones.proyectos_usuarios.edit');
+
+Route::put('/asignaciones/proyectos-usuarios/{id_usuario}', [ProyectoUsuarioController::class, 'update'])
+    ->name('asignaciones.proyectos_usuarios.update');
+
+
 
 
 });
