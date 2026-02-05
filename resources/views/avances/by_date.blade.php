@@ -14,6 +14,12 @@
       📥 Exportar Excel
     </a>
 
+    <a class="btn btn-danger"
+   href="{{ route('avances.exportPdf', request()->query()) }}">
+  Exportar PDF
+</a>
+
+
     <a
       href="{{ route('avances.create') }}"
       class="btn btn-outline-secondary"
@@ -72,7 +78,7 @@
             <div class="d-flex justify-content-between">
               <div>
                 <div class="fw-bold">📁 {{ $a->proyecto->nombre ?? 'Sin proyecto' }}</div>
-                <div>{{ $a->descripcion }}</div>
+                <div>{!! $a->descripcion !!}</div>
                 <small class="text-muted">
                   ✍️
                     @if($a->usuario)

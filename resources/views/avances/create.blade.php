@@ -1,4 +1,3 @@
-{{-- resources/views/avances/create.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Registrar Avance')
@@ -7,116 +6,106 @@
 <div class="container py-4">
 
   @if (session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert alert-success alert-dismissible fade show">
       {{ session('success') }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+      <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   @endif
 
-  @if (session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      {{ session('error') }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+  @if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show">
+      <strong>Corrige los errores:</strong>
+      <ul class="mb-0">
+        @foreach ($errors->all() as $e)
+          <li>{{ $e }}</li>
+        @endforeach
+      </ul>
+      <button class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   @endif
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">Registrar Avance</h4>
-    <a class="btn btn-outline-secondary" href="{{ route('avances.byDate') }}">
+    <a href="{{ route('avances.byDate') }}" class="btn btn-outline-secondary">
       📅 Ver avances por fecha
     </a>
   </div>
 
   <div class="card shadow-sm border-0">
     <div class="card-body">
-<form action="{{ route('avances.store') }}" method="POST">
-  @csrf
 
-  <div class="mb-3">
-    <label>Proyecto</label>
-    <select name="id_proyecto" class="form-select" required>
-      <option value="">— Seleccionar —</option>
-      @foreach($proyectos as $p)
-        <option value="{{ $p->id_proyecto }}">{{ $p->nombre }}</option>
-      @endforeach
-    </select>
-  </div>
+      <form id="form-avance" method="POST" action="{{ route('avances.store') }}">
+        @csrf
 
-  <div class="mb-3">
-    <label>Descripción</label>
-    <textarea name="descripcion" class="form-control" rows="4" required></textarea>
-  </div>
+        <div class="mb-3">
+          <label class="form-label">Proyecto</label>
+          <select name="id_proyecto" class="form-select" required>
+            <option value="">— Seleccionar —</option>
+            @foreach ($proyectos as $p)
+              <option value="{{ $p->id_proyecto }}"
+                {{ old('id_proyecto') == $p->id_proyecto ? 'selected' : '' }}>
+                {{ $p->nombre }}
+              </option>
+            @endforeach
+          </select>
+        </div>
 
-  <button class="btn btn-primary">
-    ✚ Agregar
-  </button>
-</form>
+        <div class="mb-3">
+          <label class="form-label">Descripción</label>
+
+          <textarea
+            name="descripcion"
+            id="descripcion"
+            class="form-control"
+            rows="6"
+          >{{ old('descripcion') }}</textarea>
+
+          <small class="text-muted">
+            Puedes usar negrita, listas y pegar enlaces.
+          </small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          + Agregar
+        </button>
+      </form>
 
     </div>
   </div>
-
 </div>
 @endsection
 
 @push('scripts')
-  {{-- TinyMCE con tu API Key --}}
-  <script src="https://cdn.tiny.cloud/1/687zw6kzwgqgwr2oqdot47bz1hiy7k2bndnxr058jvd73m9g/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/687zw6kzwgqgwr2oqdot47bz1hiy7k2bndnxr058jvd73m9g/tinymce/6/tinymce.min.js"
+        referrerpolicy="origin"></script>
 
-  <script>
-    tinymce.init({
-      selector: '#descripcion',
-      height: 320,
-      menubar: false,
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-      plugins: 'link image lists table code autoresize',
-      toolbar: 'undo redo | bold italic underline | bullist numlist | link image | table | code',
+  tinymce.init({
+    selector: '#descripcion',
+    height: 260,
+    menubar: false,
+    branding: false,
 
-      // links
-      link_default_target: '_blank',
+    plugins: 'link lists autoresize',
+    toolbar: 'undo redo | bold italic underline | bullist numlist | link',
 
-      // imágenes (sube a tu servidor)
-      automatic_uploads: true,
-      images_upload_url: "{{ route('avances.uploadImage') }}",
+    link_default_target: '_blank',
+    link_assume_external_targets: true,
 
-      // handler para mandar CSRF y que Laravel no se ponga exquisito
-      images_upload_handler: function (blobInfo, progress) {
-        return new Promise(function (resolve, reject) {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', "{{ route('avances.uploadImage') }}");
+    // 🔒 solo HTML básico permitido
+    valid_elements: 'p,br,strong/b,em/i,u,ul,ol,li,a[href|target|rel]',
+    invalid_elements: 'script,iframe,style,object,embed',
 
-          xhr.onload = function() {
-            if (xhr.status < 200 || xhr.status >= 300) {
-              reject('Error HTTP: ' + xhr.status);
-              return;
-            }
+  });
 
-            let json;
-            try {
-              json = JSON.parse(xhr.responseText);
-            } catch (e) {
-              reject('Respuesta inválida del servidor');
-              return;
-            }
-
-            if (!json.location) {
-              reject('El servidor no devolvió location');
-              return;
-            }
-
-            resolve(json.location);
-          };
-
-          xhr.onerror = function () {
-            reject('Error de red al subir la imagen');
-          };
-
-          const formData = new FormData();
-          formData.append('_token', "{{ csrf_token() }}");
-          formData.append('file', blobInfo.blob(), blobInfo.filename());
-
-          xhr.send(formData);
-        });
-      }
+  // 🔑 sincroniza antes de enviar
+  document.getElementById('form-avance')
+    .addEventListener('submit', function () {
+      tinymce.triggerSave();
     });
-  </script>
+
+});
+</script>
 @endpush

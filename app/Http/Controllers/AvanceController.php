@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 
 class AvanceController extends Controller
@@ -30,7 +32,7 @@ public function store(Request $request)
 
     $data = $request->validate([
         'id_proyecto' => ['required', 'integer', 'exists:proyectos,id_proyecto'],
-        'descripcion' => ['required', 'string', 'min:3'],
+        'descripcion' => ['required', 'string', 'min:5'],
     ]);
 
     Avance::create([
@@ -140,7 +142,7 @@ public function exportExcel(Request $request)
         $rows[] = [
             $a->fecha,
             $a->proyecto->nombre ?? '—' ,
-            $a->descripcion,
+            $this->plainText($a->descripcion),
             $a->usuario->nombre ?? 'Usuario eliminado',
             $a->usuario->apellido ?? 'Usuario eliminado',
             $a->created_at ? $a->created_at->format('H:i') : '',
@@ -150,6 +152,51 @@ public function exportExcel(Request $request)
     return Excel::download(new \App\Exports\ArrayExport($rows), 'avances.xlsx');
 
 }
+
+   private function plainText(?string $html): string
+    {
+        if (!$html) return '';
+
+        // 1) decode &nbsp; &amp; etc.
+        $text = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // 2) quita tags
+        $text = strip_tags($text);
+
+        // 3) normaliza espacios
+        $text = preg_replace('/[ \t]+/', ' ', $text);       // espacios repetidos
+        $text = preg_replace("/\r\n|\r|\n/", "\n", $text);  // saltos normalizados
+        $text = trim($text);
+
+        return $text;
+    }
+
+    public function exportPdf(Request $request)
+{
+    $proyectos = Proyecto::orderBy('nombre')->get();
+
+    $idProyecto = $request->input('id_proyecto');
+    $desde = $request->input('desde');
+    $hasta = $request->input('hasta');
+
+    $avances = Avance::query()
+        ->with(['proyecto', 'usuario'])
+        ->when($idProyecto, fn($qq) => $qq->where('id_proyecto', $idProyecto))
+        ->when($desde, fn($qq) => $qq->whereDate('fecha', '>=', $desde))
+        ->when($hasta, fn($qq) => $qq->whereDate('fecha', '<=', $hasta))
+        ->orderBy('fecha', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $grouped = $avances->groupBy(fn($a) => Carbon::parse($a->fecha)->toDateString());
+
+    $pdf = Pdf::loadView('avances.pdf_by_date', compact(
+        'proyectos', 'grouped', 'idProyecto', 'desde', 'hasta'
+    ))->setPaper('a4', 'portrait');
+
+    return $pdf->download('avances.pdf');
+}
+
 
 
 }

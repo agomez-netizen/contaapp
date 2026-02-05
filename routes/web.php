@@ -158,4 +158,7 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/oficina/rambla', [DocumentoZona14Controller::class, 'index'])
         ->name('oficina.rambla.index');
 
+        Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
+
+
 });
