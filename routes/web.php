@@ -70,6 +70,18 @@ Route::middleware(['auth.custom'])->group(function () {
         Route::post('/donaciones/{id}/toggle-bloqueo', [DonacionController::class, 'toggleBloqueo'])
             ->name('donaciones.toggleBloqueo');
 
+        Route::get('/asignaciones/proyectos-usuarios', [ProyectoUsuarioController::class, 'index'])
+    ->name('asignaciones.proyectos_usuarios.index');
+
+        Route::get('/asignaciones/proyectos-usuarios/{id_usuario}/edit', [ProyectoUsuarioController::class, 'edit'])
+            ->name('asignaciones.proyectos_usuarios.edit');
+
+        Route::put('/asignaciones/proyectos-usuarios/{id_usuario}', [ProyectoUsuarioController::class, 'update'])
+            ->name('asignaciones.proyectos_usuarios.update');
+
+
+
+
         Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
     });
 
@@ -89,6 +101,18 @@ Route::middleware(['auth.custom'])->group(function () {
 
         Route::resource('ubicaciones', UbicacionController::class)
             ->parameters(['ubicaciones' => 'ubicacion']);
+
+                    Route::get('/asignaciones/proyectos-usuarios', [ProyectoUsuarioController::class, 'index'])
+    ->name('asignaciones.proyectos_usuarios.index');
+
+        Route::get('/asignaciones/proyectos-usuarios/{id_usuario}/edit', [ProyectoUsuarioController::class, 'edit'])
+            ->name('asignaciones.proyectos_usuarios.edit');
+
+        Route::put('/asignaciones/proyectos-usuarios/{id_usuario}', [ProyectoUsuarioController::class, 'update'])
+            ->name('asignaciones.proyectos_usuarios.update');
+
+
+
     });
 
     // =========================
@@ -164,15 +188,6 @@ Route::middleware(['auth.custom'])->group(function () {
 
 
 
-
-Route::get('/asignaciones/proyectos-usuarios', [ProyectoUsuarioController::class, 'index'])
-    ->name('asignaciones.proyectos_usuarios.index');
-
-Route::get('/asignaciones/proyectos-usuarios/{id_usuario}/edit', [ProyectoUsuarioController::class, 'edit'])
-    ->name('asignaciones.proyectos_usuarios.edit');
-
-Route::put('/asignaciones/proyectos-usuarios/{id_usuario}', [ProyectoUsuarioController::class, 'update'])
-    ->name('asignaciones.proyectos_usuarios.update');
 
 
 

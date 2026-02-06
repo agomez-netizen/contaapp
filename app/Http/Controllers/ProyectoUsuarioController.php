@@ -8,22 +8,49 @@ use App\Models\Proyecto;
 
 class ProyectoUsuarioController extends Controller
 {
-    private function requireAdmin(): void
+    private function requireRoles(array $allowedRoles = ['ADMIN', 'GESTOR', 'DONACIONES']): void
     {
         $u = session('user');
-        $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+
+        if (!$u) {
+            abort(403, 'No hay usuario en sesión');
+        }
+
+        $rolName = strtoupper(trim((string)($u['rol'] ?? $u['nombre_rol'] ?? '')));
         $rolId   = (int)($u['id_rol'] ?? 0);
 
-        $isAdmin = ($rolId === 1) || ($rolName === 'ADMIN');
+        // Si manejas ID 1 como admin fijo
+        if ($rolId === 1 || $rolName === 'ADMIN') {
+            return;
+        }
 
-        if (!$isAdmin) {
+        // Normaliza permitidos
+        $allowed = array_map(fn($r) => strtoupper(trim((string)$r)), $allowedRoles);
+
+        // Alias (compatibilidad)
+        $aliases = [
+            'GESTOR'     => ['GESTOR', 'DONACIONES'],
+            'DONACIONES' => ['GESTOR', 'DONACIONES'],
+        ];
+
+        $ok = false;
+        foreach ($allowed as $r) {
+            $set = $aliases[$r] ?? [$r];
+            if (in_array($rolName, $set, true)) {
+                $ok = true;
+                break;
+            }
+        }
+
+        if (!$ok) {
             abort(403, 'No autorizado');
         }
     }
 
     public function index(Request $request)
     {
-        $this->requireAdmin();
+        // Antes: requireAdmin()
+        $this->requireRoles(['ADMIN', 'GESTOR', 'DONACIONES']);
 
         $q = trim((string) $request->get('q', ''));
 
@@ -38,12 +65,11 @@ class ProyectoUsuarioController extends Controller
             ->withQueryString();
 
         return view('proyectos.asignaciones.proyectos_usuarios.index', compact('usuarios', 'q'));
-
     }
 
     public function edit(int $id_usuario)
     {
-        $this->requireAdmin();
+        $this->requireRoles(['ADMIN', 'GESTOR', 'DONACIONES']);
 
         $usuario = Usuario::findOrFail($id_usuario);
 
@@ -51,16 +77,14 @@ class ProyectoUsuarioController extends Controller
             ->orderBy('nombre')
             ->get(['id_proyecto', 'nombre']);
 
-        // IDs ya asignados (usa la relación belongsToMany)
         $asignados = $usuario->proyectos()->pluck('proyectos.id_proyecto')->toArray();
 
         return view('proyectos.asignaciones.proyectos_usuarios.edit', compact('usuario', 'proyectos', 'asignados'));
-
     }
 
     public function update(Request $request, int $id_usuario)
     {
-        $this->requireAdmin();
+        $this->requireRoles(['ADMIN', 'GESTOR', 'DONACIONES']);
 
         $usuario = Usuario::findOrFail($id_usuario);
 
@@ -71,13 +95,11 @@ class ProyectoUsuarioController extends Controller
 
         $ids = $data['proyectos'] ?? [];
 
-        // Seguridad: solo proyectos activos existentes
         $idsValidos = Proyecto::where('activo', 1)
             ->whereIn('id_proyecto', $ids)
             ->pluck('id_proyecto')
             ->toArray();
 
-        // Sync: deja exactamente los seleccionados
         $usuario->proyectos()->sync($idsValidos);
 
         return redirect()
