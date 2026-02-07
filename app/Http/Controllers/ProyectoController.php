@@ -4,22 +4,59 @@ namespace App\Http\Controllers;
 
 use App\Models\Proyecto;
 use Illuminate\Http\Request;
-use App\Http\Controllers\ProyectoController;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ArrayExport;
 
 class ProyectoController extends Controller
 {
     public function index(Request $request)
     {
-        $q = trim($request->get('q', ''));
+        $q = trim((string) $request->get('q', ''));
 
+        // Cargamos encargados (usuarios asignados) para poder mostrarlos en el listado
         $proyectos = Proyecto::query()
-            ->when($q, fn($qq) => $qq->where('nombre', 'like', "%{$q}%"))
+            ->with(['usuarios' => function ($u) {
+                // Traemos solo lo necesario (ajusta si tu tabla usa otros nombres)
+                $u->select('usuarios.id_usuario', 'usuarios.nombre', 'usuarios.apellido');
+            }])
+            ->when($q !== '', fn($qq) => $qq->where('nombre', 'like', "%{$q}%"))
             ->orderByDesc('id_proyecto')
             ->paginate(10)
             ->withQueryString();
 
         return view('proyectos.index', compact('proyectos', 'q'));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $q = trim((string) $request->get('q', ''));
+
+        $items = Proyecto::query()
+            ->with(['usuarios' => function ($u) {
+                $u->select('usuarios.id_usuario', 'usuarios.nombre', 'usuarios.apellido');
+            }])
+            ->when($q !== '', fn($qq) => $qq->where('nombre', 'like', "%{$q}%"))
+            ->orderByDesc('id_proyecto')
+            ->get();
+
+        $rows = [];
+        $rows[] = ['Nombre', 'Activo', 'Encargados'];
+
+        foreach ($items as $p) {
+            $encargados = $p->usuarios
+                ? $p->usuarios->map(function ($u) {
+                    return trim(($u->nombre ?? '') . ' ' . ($u->apellido ?? ''));
+                })->filter()->implode(', ')
+                : '';
+
+            $rows[] = [
+                (string) ($p->nombre ?? ''),
+                ($p->activo ? 'Sí' : 'No'),
+                $encargados !== '' ? $encargados : '—',
+            ];
+        }
+
+        return Excel::download(new ArrayExport($rows), 'proyectos.xlsx');
     }
 
     public function create()
@@ -30,9 +67,9 @@ class ProyectoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nombre' => ['required','string','max:120'],
-            'descripcion' => ['nullable','string','max:2000'],
-            'activo' => ['nullable','boolean'],
+            'nombre' => ['required', 'string', 'max:120'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
+            'activo' => ['nullable', 'boolean'],
         ]);
 
         $data['activo'] = $request->boolean('activo');
@@ -56,9 +93,9 @@ class ProyectoController extends Controller
     public function update(Request $request, Proyecto $proyecto)
     {
         $data = $request->validate([
-            'nombre' => ['required','string','max:120'],
-            'descripcion' => ['nullable','string','max:2000'],
-            'activo' => ['nullable','boolean'],
+            'nombre' => ['required', 'string', 'max:120'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
+            'activo' => ['nullable', 'boolean'],
         ]);
 
         $data['activo'] = $request->boolean('activo');

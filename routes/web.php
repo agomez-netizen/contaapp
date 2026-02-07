@@ -80,6 +80,10 @@ Route::middleware(['auth.custom'])->group(function () {
             ->name('asignaciones.proyectos_usuarios.update');
 
 
+           Route::get('/proyectos/export', [ProyectoController::class, 'exportExcel'])
+        ->name('proyectos.export');
+
+    Route::resource('proyectos', ProyectoController::class);
 
 
         Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
@@ -184,7 +188,6 @@ Route::middleware(['auth.custom'])->group(function () {
         ->name('oficina.rambla.index');
 
         Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
-
 
 
 

@@ -10,6 +10,9 @@
       <h4 class="mb-0">Asignar Proyectos a Usuarios</h4>
       <div class="text-muted">Selecciona un usuario y asigna sus proyectos</div>
     </div>
+        <a class="btn btn-outline-secondary" href="{{ route('proyectos.index') }}">
+      ← Volver
+    </a>
   </div>
 
   @if (session('success'))
@@ -41,8 +44,6 @@
         <thead class="table-light">
           <tr>
             <th>Usuario</th>
-            <th>Login</th>
-            <th>Rol</th>
             <th class="text-end">Acción</th>
           </tr>
         </thead>
@@ -51,10 +52,7 @@
             <tr>
               <td>
                 <div class="fw-semibold">{{ $u->nombre }} {{ $u->apellido }}</div>
-                <div class="text-muted small">ID: {{ $u->id_usuario }}</div>
               </td>
-              <td>{{ $u->usuario }}</td>
-              <td>{{ $u->id_rol ?? '—' }}</td>
               <td class="text-end">
                 <a class="btn btn-sm btn-outline-primary"
                    href="{{ route('asignaciones.proyectos_usuarios.edit', $u->id_usuario) }}">
