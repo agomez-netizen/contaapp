@@ -21,6 +21,7 @@ use App\Http\Controllers\AvanceController;
 // ✅ Estos dos te faltaban en el archivo que me pasaste (si ya existen, perfecto)
 use App\Http\Controllers\DocumentoAntiguaController;
 use App\Http\Controllers\DocumentoZona14Controller;
+use App\Http\Controllers\OficinaAntiguaController;
 
 use Illuminate\Support\Facades\Schedule;
 
@@ -116,6 +117,21 @@ Route::middleware(['auth.custom'])->group(function () {
             ->name('asignaciones.proyectos_usuarios.update');
 
 
+                Route::get('/', [OficinaAntiguaController::class, 'index'])->name('oficina.antigua.index');
+    Route::get('/create', [OficinaAntiguaController::class, 'create'])->name('oficina.antigua.create');
+    Route::post('/', [OficinaAntiguaController::class, 'store'])->name('oficina.antigua.store');
+
+    Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
+    Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
+
+    Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
+
+    Route::get('/export/excel', [OficinaAntiguaController::class, 'exportExcel'])->name('oficina.antigua.export.excel');
+
+
+        // ✅ Show (detalle) — IMPORTANTE: antes de edit/update/destroy también funciona, pero siempre DESPUÉS de create/export
+    Route::get('/{id}', [OficinaAntiguaController::class, 'show'])->name('oficina.antigua.show');
+
 
     });
 
@@ -190,6 +206,15 @@ Route::middleware(['auth.custom'])->group(function () {
         Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
 
 
+
+            Route::get('/', [OficinaAntiguaController::class, 'index'])->name('oficina.antigua.index');
+    Route::get('/create', [OficinaAntiguaController::class, 'create'])->name('oficina.antigua.create');
+    Route::post('/', [OficinaAntiguaController::class, 'store'])->name('oficina.antigua.store');
+
+    Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
+    Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
+
+    Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
 
 
 
