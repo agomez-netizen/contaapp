@@ -42,6 +42,7 @@
   $canMaintProyectos     = $isAdmin || $isGestor;
   $canMaintTiposDonacion = $isAdmin || $isGestor;
   $canMaintUbicaciones   = $isAdmin || $isGestor;
+  $canRubros = $isAdmin || $isGestor;
 
   // Gestor no puede Usuarios ni Roles
   $canMaintUsuarios = $isAdmin;
@@ -385,6 +386,19 @@
             <span>Ubicaciones</span>
           </a>
         @endif
+
+        @if($canRubros)
+        <a href="{{ route('rubros.index') }}"
+            class="navitem {{ request()->routeIs('rubros.*') ? 'active' : '' }}"
+            data-bs-toggle="tooltip"
+            data-bs-placement="right"
+            data-bs-container="body"
+            title="Rubros">
+            <span class="navicon">🏷️</span>
+            <span>Rubros</span>
+        </a>
+        @endif
+
 
       </div>
     </div>

@@ -22,6 +22,7 @@ use App\Http\Controllers\AvanceController;
 use App\Http\Controllers\DocumentoAntiguaController;
 use App\Http\Controllers\DocumentoZona14Controller;
 use App\Http\Controllers\OficinaAntiguaController;
+use App\Http\Controllers\RubroController;
 
 use Illuminate\Support\Facades\Schedule;
 
@@ -186,7 +187,19 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/avances/export/excel', [AvanceController::class, 'exportExcel'])
         ->name('avances.export.excel');
 
-            Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
+    Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
+
+
+    Route::get('/rubros', [RubroController::class, 'index'])->name('rubros.index');
+    Route::get('/rubros/create', [RubroController::class, 'create'])->name('rubros.create');
+    Route::post('/rubros', [RubroController::class, 'store'])->name('rubros.store');
+    Route::get('/rubros/{id}/edit', [RubroController::class, 'edit'])->name('rubros.edit');
+    Route::put('/rubros/{id}', [RubroController::class, 'update'])->name('rubros.update');
+    Route::delete('/rubros/{id}', [RubroController::class, 'destroy'])->name('rubros.destroy');
+
+    Route::patch('/rubros/{id}/toggle', [RubroController::class, 'toggle'])->name('rubros.toggle');
+
+
     // =========================
     // OFICINA
     // =========================
@@ -213,6 +226,8 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
     Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
     Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
+
+
 
 
 
