@@ -23,7 +23,10 @@ class RoleMiddleware
         $idToName = [
             1 => 'ADMIN',
             2 => 'RIFA',
-            3 => 'GESTOR', // o DONACIONES, como prefieras manejarlo
+            3 => 'GESTOR',      // a veces en sesión viene como DONACIONES
+            4 => 'SECRETARIA',
+            5 => 'PROYECTOS',
+            6 => 'DIRECTOR',
         ];
 
         $actual = $rolName ?: ($idToName[$rolId] ?? '');

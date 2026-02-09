@@ -116,21 +116,13 @@ Route::middleware(['auth.custom'])->group(function () {
         Route::put('/asignaciones/proyectos-usuarios/{id_usuario}', [ProyectoUsuarioController::class, 'update'])
             ->name('asignaciones.proyectos_usuarios.update');
 
+        Route::get('/donaciones/export/excel', [DashboardController::class, 'exportExcel'])
+            ->name('donaciones.export.excel');
 
-                Route::get('/', [OficinaAntiguaController::class, 'index'])->name('oficina.antigua.index');
-    Route::get('/create', [OficinaAntiguaController::class, 'create'])->name('oficina.antigua.create');
-    Route::post('/', [OficinaAntiguaController::class, 'store'])->name('oficina.antigua.store');
+        Route::get('/donaciones/export/pdf', [DashboardController::class, 'exportPdf'])
+            ->name('donaciones.export.pdf');
 
-    Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
-    Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
-
-    Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
-
-    Route::get('/export/excel', [OficinaAntiguaController::class, 'exportExcel'])->name('oficina.antigua.export.excel');
-
-
-        // ✅ Show (detalle) — IMPORTANTE: antes de edit/update/destroy también funciona, pero siempre DESPUÉS de create/export
-    Route::get('/{id}', [OficinaAntiguaController::class, 'show'])->name('oficina.antigua.show');
+        Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
 
 
     });
@@ -194,6 +186,7 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/avances/export/excel', [AvanceController::class, 'exportExcel'])
         ->name('avances.export.excel');
 
+            Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
     // =========================
     // OFICINA
     // =========================
@@ -203,18 +196,25 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/oficina/rambla', [DocumentoZona14Controller::class, 'index'])
         ->name('oficina.rambla.index');
 
-        Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
+    Route::get('/', [OficinaAntiguaController::class, 'index'])->name('oficina.antigua.index');
 
+    // ✅ Export (antes de {id})
+    Route::get('/export/excel', [OficinaAntiguaController::class, 'exportExcel'])
+        ->name('oficina.antigua.export.excel');
 
-
-            Route::get('/', [OficinaAntiguaController::class, 'index'])->name('oficina.antigua.index');
+    // ✅ Create (antes de {id})
     Route::get('/create', [OficinaAntiguaController::class, 'create'])->name('oficina.antigua.create');
     Route::post('/', [OficinaAntiguaController::class, 'store'])->name('oficina.antigua.store');
 
+    // ✅ Show (detalle) — IMPORTANTE: antes de edit/update/destroy también funciona, pero siempre DESPUÉS de create/export
+    Route::get('/{id}', [OficinaAntiguaController::class, 'show'])->name('oficina.antigua.show');
+
+    // ✅ Edit/Update/Delete
     Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
     Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
-
     Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
+
+
 
 
 

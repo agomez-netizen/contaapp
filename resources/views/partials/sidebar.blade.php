@@ -34,7 +34,7 @@
   $canMetricas   = $isAdmin || $isGestor || $isDirector;
 
   // Oficina (si quieres limitarlo por rol, aquí lo haces)
-  $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isDirector; // ajustable
+  $canOficina    = $isAdmin || $isGestor ; // ajustable
 
   // Mantenimientos
   $canMaint      = $isAdmin || $isGestor;
@@ -291,15 +291,16 @@
           <span>Antigua</span>
         </a>
 
-        <a href="{{ route('oficina.rambla.index') }}"
-           class="navitem {{ request()->routeIs('oficina.rambla.*') ? 'active' : '' }}"
+        {{--<a href="{{ route('oficina.antigua.index') }}"
+           class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
            data-bs-toggle="tooltip"
            data-bs-placement="right"
            data-bs-container="body"
            title="Documentos de Oficina Zona 14">
           <span class="navicon">📂</span>
           <span>Rambla</span>
-        </a>
+        </a>--}}
+
 
       </div>
     </div>
