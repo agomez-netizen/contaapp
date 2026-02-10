@@ -27,6 +27,7 @@
   $canPacientes  = $isAdmin || $isGestor || $isSecretaria;
   $canMedios     = $isAdmin || $isGestor || $isSecretaria;
 
+
   $canProyectos  = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isDirector;
 
   // Subpermisos dentro de Proyectos
@@ -34,7 +35,7 @@
   $canMetricas   = $isAdmin || $isGestor || $isDirector;
 
   // Oficina (si quieres limitarlo por rol, aquí lo haces)
-  $canOficina    = $isAdmin || $isGestor ; // ajustable
+  $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isProyectos; // ajustable
 
   // Mantenimientos
   $canMaint      = $isAdmin || $isGestor;
@@ -262,6 +263,11 @@
     </div>
   @endif
 
+
+
+
+
+
   {{-- ================= OFICINA ================= --}}
   @if($canOficina)
     <button type="button"
@@ -282,6 +288,7 @@
     <div class="collapse {{ $ofOpen ? 'show' : '' }}" id="{{ $idOficina }}">
       <div class="d-grid gap-1 ms-4 mt-1">
 
+  @if($isAdmin || $isGestor)
         <a href="{{ route('oficina.antigua.index') }}"
            class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
            data-bs-toggle="tooltip"
@@ -291,16 +298,18 @@
           <span class="navicon">📂</span>
           <span>Antigua</span>
         </a>
+@endif
 
-        {{--<a href="{{ route('oficina.antigua.index') }}"
-           class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
+        <a href="{{ route('contactos.index') }}"
+           class="navitem {{ request()->routeIs('contactos.antigua.*') ? 'active' : '' }}"
            data-bs-toggle="tooltip"
            data-bs-placement="right"
            data-bs-container="body"
-           title="Documentos de Oficina Zona 14">
+           title="Contactos">
           <span class="navicon">📂</span>
-          <span>Rambla</span>
-        </a>--}}
+          <span>Contactos</span>
+        </a>
+
 
 
       </div>

@@ -23,6 +23,8 @@ use App\Http\Controllers\DocumentoAntiguaController;
 use App\Http\Controllers\DocumentoZona14Controller;
 use App\Http\Controllers\OficinaAntiguaController;
 use App\Http\Controllers\RubroController;
+use App\Http\Controllers\ContactoController;
+
 
 use Illuminate\Support\Facades\Schedule;
 
@@ -198,6 +200,17 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::delete('/rubros/{id}', [RubroController::class, 'destroy'])->name('rubros.destroy');
 
     Route::patch('/rubros/{id}/toggle', [RubroController::class, 'toggle'])->name('rubros.toggle');
+
+
+Route::get('/contactos', [ContactoController::class, 'index'])->name('contactos.index');
+Route::get('/contactos/create', [ContactoController::class, 'create'])->name('contactos.create');
+Route::post('/contactos', [ContactoController::class, 'store'])->name('contactos.store');
+Route::get('/contactos/{id}', [ContactoController::class, 'show'])->name('contactos.show');
+Route::get('/contactos/{id}/edit', [ContactoController::class, 'edit'])->name('contactos.edit');
+Route::put('/contactos/{id}', [ContactoController::class, 'update'])->name('contactos.update');
+Route::delete('/contactos/{id}', [ContactoController::class, 'destroy'])->name('contactos.destroy');
+Route::get('/contactos-export/excel', [ContactoController::class, 'exportExcel'])
+    ->name('contactos.export.excel');
 
 
     // =========================
