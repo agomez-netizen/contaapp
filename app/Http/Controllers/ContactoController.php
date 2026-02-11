@@ -6,8 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Contacto;
 use App\Models\Proyecto;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ContactosExport;
-
+use Illuminate\Support\Facades\DB;
 
 class ContactoController extends Controller
 {
@@ -31,10 +30,13 @@ class ContactoController extends Controller
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($qq) use ($q) {
                     $qq->where('nombre', 'like', "%{$q}%")
+                       ->orWhere('contacto', 'like', "%{$q}%")     // ✅ NUEVO
                        ->orWhere('correo', 'like', "%{$q}%")
+                       ->orWhere('email', 'like', "%{$q}%")
                        ->orWhere('telefono', 'like', "%{$q}%")
                        ->orWhere('nit', 'like', "%{$q}%")
-                       ->orWhere('motivo', 'like', "%{$q}%");
+                       ->orWhere('motivo', 'like', "%{$q}%")
+                       ->orWhere('sitio_web', 'like', "%{$q}%");
                 });
             })
             ->when($proyecto > 0, fn($query) => $query->where('id_proyecto', $proyecto))
@@ -66,15 +68,18 @@ class ContactoController extends Controller
             'id_proyecto' => ['required', 'integer', 'min:1'],
             'tipo'        => ['required', 'string', 'max:30'],
             'nombre'      => ['required', 'string', 'max:150'],
+
+            'contacto'    => ['nullable', 'string', 'max:150'], // ✅ NUEVO
+
             'telefono'    => ['nullable', 'string', 'max:30'],
             'extension'   => ['nullable', 'string', 'max:10'],
             'correo'      => ['nullable', 'email', 'max:120'],
             'direccion'   => ['nullable', 'string', 'max:255'],
             'nit'         => ['nullable', 'string', 'max:30'],
             'motivo'      => ['nullable', 'string', 'max:255'],
-            'email'     => ['nullable', 'email', 'max:150'],
-            'sitio_web' => ['nullable', 'url', 'max:150'],
 
+            'email'       => ['nullable', 'email', 'max:150'],
+            'sitio_web'   => ['nullable', 'url', 'max:150'],
         ]);
 
         Contacto::create($data);
@@ -111,12 +116,19 @@ class ContactoController extends Controller
             'id_proyecto' => ['required', 'integer', 'min:1'],
             'tipo'        => ['required', 'string', 'max:30'],
             'nombre'      => ['required', 'string', 'max:150'],
+
+            'contacto'    => ['nullable', 'string', 'max:150'], // ✅ NUEVO
+
             'telefono'    => ['nullable', 'string', 'max:30'],
             'extension'   => ['nullable', 'string', 'max:10'],
             'correo'      => ['nullable', 'email', 'max:120'],
             'direccion'   => ['nullable', 'string', 'max:255'],
             'nit'         => ['nullable', 'string', 'max:30'],
             'motivo'      => ['nullable', 'string', 'max:255'],
+
+            // ✅ Estos estaban en store pero no en update; tu formulario ya los usa.
+            'email'       => ['nullable', 'email', 'max:150'],
+            'sitio_web'   => ['nullable', 'url', 'max:150'],
         ]);
 
         $contacto->update($data);
@@ -135,67 +147,67 @@ class ContactoController extends Controller
         return redirect()->route('contactos.index')->with('success', 'Contacto eliminado.');
     }
 
+    private function buildExportQueryAll(Request $request)
+    {
+        $q        = trim((string) $request->get('q', ''));
+        $proyecto = (int) $request->get('proyecto', 0);
+        $tipo     = trim((string) $request->get('tipo', ''));
 
-private function buildExportQueryAll(Request $request)
-{
-    $q        = trim((string) $request->get('q', ''));
-    $proyecto = (int) $request->get('proyecto', 0);
-    $tipo     = trim((string) $request->get('tipo', ''));
-
-    return \Illuminate\Support\Facades\DB::table('contactos as c')
-        ->join('proyectos as p', 'p.id_proyecto', '=', 'c.id_proyecto')
-        ->select([
-            'p.nombre as PROYECTO',
-            'c.tipo as TIPO',
-            'c.nombre as NOMBRE',
-            'c.telefono as TELEFONO',
-            'c.extension as EXTENCION',
-            'c.correo as CORREO',
-            'c.direccion as DIRECCION',
-            'c.nit as NIT',
-            'c.motivo as MOTIVO',
-        ])
-        ->when($q !== '', function ($query) use ($q) {
-            $query->where(function ($qq) use ($q) {
-                $qq->where('c.nombre', 'like', "%{$q}%")
-                   ->orWhere('c.correo', 'like', "%{$q}%")
-                   ->orWhere('c.telefono', 'like', "%{$q}%")
-                   ->orWhere('c.nit', 'like', "%{$q}%")
-                   ->orWhere('c.motivo', 'like', "%{$q}%");
-            });
-        })
-        ->when($proyecto > 0, fn($query) => $query->where('c.id_proyecto', $proyecto))
-        ->when($tipo !== '', fn($query) => $query->where('c.tipo', $tipo))
-        ->orderByDesc('c.id_contacto');
-}
-
-
-public function exportExcel(Request $request)
-{
-    $rows = $this->buildExportQueryAll($request)->get();
-
-    if ($rows->isEmpty()) {
-        return back()->with('error', 'No hay datos para exportar.');
+        return DB::table('contactos as c')
+            ->join('proyectos as p', 'p.id_proyecto', '=', 'c.id_proyecto')
+            ->select([
+                'p.nombre as PROYECTO',
+                'c.tipo as TIPO',
+                'c.nombre as NOMBRE',
+                'c.contacto as CONTACTO',   // ✅ NUEVO
+                'c.telefono as TELEFONO',
+                'c.extension as EXTENCION',
+                'c.correo as CORREO',
+                'c.email as EMAIL',
+                'c.sitio_web as SITIO_WEB',
+                'c.direccion as DIRECCION',
+                'c.nit as NIT',
+                'c.motivo as MOTIVO',
+            ])
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($qq) use ($q) {
+                    $qq->where('c.nombre', 'like', "%{$q}%")
+                       ->orWhere('c.contacto', 'like', "%{$q}%")   // ✅ NUEVO
+                       ->orWhere('c.correo', 'like', "%{$q}%")
+                       ->orWhere('c.email', 'like', "%{$q}%")
+                       ->orWhere('c.telefono', 'like', "%{$q}%")
+                       ->orWhere('c.nit', 'like', "%{$q}%")
+                       ->orWhere('c.motivo', 'like', "%{$q}%")
+                       ->orWhere('c.sitio_web', 'like', "%{$q}%");
+                });
+            })
+            ->when($proyecto > 0, fn($query) => $query->where('c.id_proyecto', $proyecto))
+            ->when($tipo !== '', fn($query) => $query->where('c.tipo', $tipo))
+            ->orderByDesc('c.id_contacto');
     }
 
-    $headers = array_keys((array) $rows->first());
+    public function exportExcel(Request $request)
+    {
+        $rows = $this->buildExportQueryAll($request)->get();
 
-    $exportData = [];
-    $exportData[] = $headers;
+        if ($rows->isEmpty()) {
+            return back()->with('error', 'No hay datos para exportar.');
+        }
 
-    foreach ($rows as $row) {
-        $exportData[] = array_values((array) $row);
+        $headers = array_keys((array) $rows->first());
+
+        $exportData = [];
+        $exportData[] = $headers;
+
+        foreach ($rows as $row) {
+            $exportData[] = array_values((array) $row);
+        }
+
+        $fileName = 'contactos_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new \App\Exports\ArrayExport($exportData),
+            $fileName
+        );
     }
-
-    $fileName = 'contactos_' . now()->format('Ymd_His') . '.xlsx';
-
-    return Excel::download(
-        new \App\Exports\ArrayExport($exportData),
-        $fileName
-    );
-}
-
-
-
-
 }

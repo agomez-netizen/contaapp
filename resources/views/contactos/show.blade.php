@@ -36,6 +36,11 @@
     <div class="card-body">
       <div class="row g-3">
         <div class="col-md-6">
+          <div class="text-muted">Contacto</div>
+          <div class="fw-semibold">{{ $contacto->contacto ?? '—' }}</div>
+        </div>
+
+        <div class="col-md-6">
           <div class="text-muted">Teléfono</div>
           <div class="fw-semibold">{{ $contacto->telefono ?? '—' }}</div>
         </div>

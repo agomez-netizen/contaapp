@@ -584,3 +584,6 @@ ADD COLUMN sitio_web VARCHAR(150) NULL AFTER email;
 ALTER TABLE documentos_ingresos
 ADD no_documento_pago VARCHAR(100) NULL,
 ADD fecha_pago DATE NULL;
+
+
+ALTER TABLE contactos ADD contacto VARCHAR(150) NULL AFTER nombre;

@@ -19,13 +19,15 @@
   Exportar PDF
 </a>
 
-
-    <a
-      href="{{ route('avances.create') }}"
-      class="btn btn-outline-secondary"
-    >
-      ← Registrar avance
+    @php
+    $u = session('user');
+    $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+    @endphp
+    @if($rolName !== 'COMUNICADOR')
+    <a href="{{ route('avances.create') }}" class="btn btn-outline-secondary">
+        ← Registrar avance
     </a>
+    @endif
   </div>
 </div>
 

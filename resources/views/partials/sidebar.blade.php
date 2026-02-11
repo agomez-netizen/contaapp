@@ -20,29 +20,32 @@
   $isSecretaria = $rolName === 'SECRETARIA';
   $isProyectos  = $rolName === 'PROYECTOS';
   $isDirector   = $rolName === 'DIRECTOR';
+  $isComunicador = $rolName === 'COMUNICADOR';
+
+
 
   // Permisos por módulo
-  $canDashboard  = $isAdmin || $isGestor || $isDirector || $isSecretaria ;
-  $canDonaciones = $isAdmin || $isGestor;
-  $canPacientes  = $isAdmin || $isGestor || $isSecretaria;
-  $canMedios     = $isAdmin || $isGestor || $isSecretaria;
+  $canDashboard  = $isAdmin || $isGestor || $isDirector || $isSecretaria && !$isComunicador;
+  $canDonaciones = $isAdmin || $isGestor && !$isComunicador;
+  $canPacientes  = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
+  $canMedios     = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
 
 
-  $canProyectos  = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isDirector;
+  $canProyectos  = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isDirector  || $isComunicador;;
 
   // Subpermisos dentro de Proyectos
-  $canAvances    = $isAdmin || $isGestor || $isSecretaria || $isProyectos;
-  $canMetricas   = $isAdmin || $isGestor || $isDirector;
+  $canAvances    = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isComunicador;;
+  $canMetricas   = $isAdmin || $isGestor || $isDirector && !$isComunicador;
 
   // Oficina (si quieres limitarlo por rol, aquí lo haces)
-  $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isProyectos; // ajustable
+  $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isProyectos && !$isComunicador;; // ajustable
 
   // Mantenimientos
-  $canMaint      = $isAdmin || $isGestor;
+  $canMaint      = $isAdmin || $isGestor && !$isComunicador;;
 
-  $canMaintProyectos     = $isAdmin || $isGestor;
-  $canMaintTiposDonacion = $isAdmin || $isGestor;
-  $canMaintUbicaciones   = $isAdmin || $isGestor;
+  $canMaintProyectos     = $isAdmin || $isGestor || $isComunicador;
+  $canMaintTiposDonacion = $isAdmin || $isGestor && !$isComunicador;
+  $canMaintUbicaciones   = $isAdmin || $isGestor && !$isComunicador;
   $canRubros = $isAdmin || $isGestor;
 
   // Gestor no puede Usuarios ni Roles
@@ -66,10 +69,19 @@
   $pacOpen  = request()->routeIs('pacientes.*');
   $medOpen  = request()->routeIs('medios.*');
 
-  $proyOpen = request()->routeIs('avances.*')
+ /* $proyOpen = request()->routeIs('avances.*')
           || request()->routeIs('presupuestos.*')
           || request()->routeIs('facturas.*')
           || request()->routeIs('proyectosaapos.*');
+          */
+
+ $proyOpen = request()->routeIs('avances.*')
+        || request()->routeIs('avances.por-fecha')
+        || request()->routeIs('avances.porFecha')
+        || request()->routeIs('presupuestos.*')
+        || request()->routeIs('facturas.*')
+        || request()->routeIs('proyectosaapos.*');
+
 
   $ofOpen = request()->routeIs('oficina.antigua.*')
          || request()->routeIs('oficina.rambla.*');
@@ -235,17 +247,19 @@
     <div class="collapse {{ $proyOpen ? 'show' : '' }}" id="{{ $idProyectosAapos }}">
       <div class="d-grid gap-1 ms-4 mt-1">
 
-        @if($canAvances)
-          <a href="{{ route('avances.create') }}"
-             class="navitem {{ request()->routeIs('avances.create','avances.store','avances.byDate','avances.porFecha','avances.index') ? 'active' : '' }}"
-             data-bs-toggle="tooltip"
-             data-bs-placement="right"
-             data-bs-container="body"
-             title="Registrar y consultar avances">
-            <span class="navicon">💻</span>
-            <span>Avances</span>
-          </a>
-        @endif
+@if($canAvances)
+  <a href="{{ $isComunicador ? url('/avances/por-fecha') : route('avances.create') }}"
+     class="navitem {{ request()->is('avances*') ? 'active' : '' }}"
+     data-bs-toggle="tooltip"
+     data-bs-placement="right"
+     data-bs-container="body"
+     title="Registrar y consultar avances">
+    <span class="navicon">💻</span>
+    <span>Avances</span>
+  </a>
+@endif
+
+
 
         @if($canMetricas)
           <a href="{{ route('avances.dashboard') }}"

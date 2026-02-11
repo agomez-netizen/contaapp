@@ -73,6 +73,7 @@
             <th>Proyecto</th>
             <th>Tipo</th>
             <th>Nombre</th>
+            <th>Contacto</th>
             <th>Teléfono</th>
             <th>Ext.</th>
             <th>Correo</th>
@@ -86,6 +87,7 @@
               <td>{{ $c->proyecto->nombre ?? ('ID '.$c->id_proyecto) }}</td>
               <td>{{ $c->tipo }}</td>
               <td class="fw-semibold">{{ $c->nombre }}</td>
+              <td>{{ $c->contacto ?? '—' }}</td>
               <td>{{ $c->telefono ?? '—' }}</td>
               <td>{{ $c->extension ?? '—' }}</td>
               <td>{{ $c->correo ?? '—' }}</td>
@@ -102,7 +104,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="8" class="text-center text-muted py-4">No hay contactos.</td>
+              <td colspan="9" class="text-center text-muted py-4">No hay contactos.</td>
             </tr>
           @endforelse
         </tbody>

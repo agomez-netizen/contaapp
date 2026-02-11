@@ -47,11 +47,13 @@
     </select>
   </div>
 
-  <div class="col-md-4">
-    <label class="form-label">Fecha Documento</label>
-    <input type="date" name="fecha_documento" class="form-control"
-           value="{{ old('fecha_documento', $row->fecha_documento ?? '') }}" required>
-  </div>
+<div class="col-md-4">
+  <label class="form-label">Fecha Documento</label>
+  <input type="date" name="fecha_documento" class="form-control"
+         value="{{ old('fecha_documento', !empty($row->fecha_documento) ? \Carbon\Carbon::parse($row->fecha_documento)->format('Y-m-d') : '') }}"
+         required>
+</div>
+
 
   <div class="col-md-4">
     <label class="form-label">No. Documento</label>
@@ -134,11 +136,12 @@
            value="{{ old('no_documento_pago', $row->no_documento_pago ?? '') }}">
   </div>
 
-  <div class="col-md-6">
-    <label class="form-label">Fecha Pago</label>
-    <input id="fecha_pago" type="date" name="fecha_pago" class="form-control"
-           value="{{ old('fecha_pago', $row->fecha_pago ?? '') }}">
-  </div>
+<div class="col-md-6">
+  <label class="form-label">Fecha Pago</label>
+  <input id="fecha_pago" type="date" name="fecha_pago" class="form-control"
+         value="{{ old('fecha_pago', !empty($row->fecha_pago) ? \Carbon\Carbon::parse($row->fecha_pago)->format('Y-m-d') : '') }}">
+</div>
+
   {{-- =================================================== --}}
 
   {{-- ARCHIVO --}}

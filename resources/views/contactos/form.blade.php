@@ -40,8 +40,13 @@
   </div>
 
   <div class="col-md-6">
-    <label class="form-label">Nombre *</label>
+    <label class="form-label">Nombre Empresa *</label>
     <input class="form-control" name="nombre" value="{{ old('nombre', $c->nombre ?? '') }}" required maxlength="150">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Contacto</label>
+    <input class="form-control" name="contacto" value="{{ old('contacto', $c->contacto ?? '') }}" maxlength="150">
   </div>
 
   <div class="col-md-3">

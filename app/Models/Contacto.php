@@ -14,6 +14,7 @@ class Contacto extends Model
         'id_proyecto',
         'tipo',
         'nombre',
+        'contacto',
         'telefono',
         'extension',
         'correo',
