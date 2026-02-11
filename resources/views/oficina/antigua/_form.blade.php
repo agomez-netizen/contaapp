@@ -14,6 +14,10 @@
         {{ old('tipo_documento', $row->tipo_documento ?? '')=='COTIZACION'?'selected':'' }}>
         Cotización
       </option>
+     <option value="RECIBO"
+        {{ old('tipo_documento', $row->tipo_documento ?? '')=='RECIBO'?'selected':'' }}>
+        Recibo
+      </option>
     </select>
   </div>
 

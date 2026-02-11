@@ -128,7 +128,7 @@ class OficinaAntiguaController extends Controller
         $userId = $u['id_usuario'] ?? null;
 
         $data = $request->validate([
-            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION'],
+            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO'],
             'id_proyecto'     => ['required', 'integer'],
             'id_rubro'        => ['nullable', 'integer'],
 
@@ -185,7 +185,7 @@ class OficinaAntiguaController extends Controller
         $row = DocumentoIngreso::where('oficina', self::OFICINA)->findOrFail($id);
 
         $data = $request->validate([
-            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION'],
+            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO'],
             'id_proyecto'     => ['required', 'integer'],
             'id_rubro'        => ['nullable', 'integer'],
 
