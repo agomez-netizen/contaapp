@@ -574,3 +574,13 @@ CREATE TABLE contactos (
   CONSTRAINT fk_contactos_proyectos
     FOREIGN KEY (id_proyecto) REFERENCES proyectos(id_proyecto)
 ) ;
+
+
+ALTER TABLE contactos
+ADD COLUMN email VARCHAR(150) NULL AFTER correo,
+ADD COLUMN sitio_web VARCHAR(150) NULL AFTER email;
+
+
+ALTER TABLE documentos_ingresos
+ADD no_documento_pago VARCHAR(100) NULL,
+ADD fecha_pago DATE NULL;

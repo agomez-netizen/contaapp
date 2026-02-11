@@ -50,6 +50,20 @@
           <div class="fw-semibold">{{ $contacto->correo ?? '—' }}</div>
         </div>
 
+
+        <div class="col-md-6">
+            <div class="text-muted">Sitio Web</div>
+            <div class="fw-semibold">
+                @if($contacto->sitio_web)
+                <a href="{{ $contacto->sitio_web }}" target="_blank">
+                    {{ $contacto->sitio_web }}
+                </a>
+                @else
+                —
+                @endif
+            </div>
+        </div>
+
         <div class="col-md-6">
           <div class="text-muted">NIT</div>
           <div class="fw-semibold">{{ $contacto->nit ?? '—' }}</div>
@@ -61,7 +75,7 @@
         </div>
 
         <div class="col-12">
-          <div class="text-muted">Motivo</div>
+          <div class="text-muted">Notas</div>
           <div class="fw-semibold">{{ $contacto->motivo ?? '—' }}</div>
         </div>
       </div>

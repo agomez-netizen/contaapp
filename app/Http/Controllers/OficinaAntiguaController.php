@@ -16,12 +16,12 @@ class OficinaAntiguaController extends Controller
     private function baseQuery(Request $request)
     {
         $q        = trim((string)$request->get('q', ''));
-        $tipo     = trim((string)$request->get('tipo', ''));        // FACTURA | COTIZACION
-        $proyecto = trim((string)$request->get('proyecto', ''));    // id_proyecto
-        $rubro    = trim((string)$request->get('rubro', ''));       // id_rubro
-        $pagada   = trim((string)$request->get('pagada', ''));      // 1 | 0 | ''
-        $desde    = trim((string)$request->get('desde', ''));       // YYYY-MM-DD
-        $hasta    = trim((string)$request->get('hasta', ''));       // YYYY-MM-DD
+        $tipo     = trim((string)$request->get('tipo', ''));
+        $proyecto = trim((string)$request->get('proyecto', ''));
+        $rubro    = trim((string)$request->get('rubro', ''));
+        $pagada   = trim((string)$request->get('pagada', ''));
+        $desde    = trim((string)$request->get('desde', ''));
+        $hasta    = trim((string)$request->get('hasta', ''));
 
         $query = DocumentoIngreso::with(['proyecto', 'rubro', 'usuario'])
             ->where('oficina', self::OFICINA);
@@ -30,7 +30,8 @@ class OficinaAntiguaController extends Controller
             $query->where(function ($qq) use ($q) {
                 $qq->where('empresa_nombre', 'like', "%{$q}%")
                    ->orWhere('no_documento', 'like', "%{$q}%")
-                   ->orWhere('serie', 'like', "%{$q}%");
+                   ->orWhere('serie', 'like', "%{$q}%")
+                   ->orWhere('no_documento_pago', 'like', "%{$q}%");
             });
         }
 
@@ -71,16 +72,7 @@ class OficinaAntiguaController extends Controller
         $proyectos = Proyecto::orderBy('nombre')->get();
         $rubros = Rubro::where('activo', 1)->orderBy('nombre')->get();
 
-        // para repintar filtros
-        $filters = [
-            'q' => $request->get('q', ''),
-            'tipo' => $request->get('tipo', ''),
-            'proyecto' => $request->get('proyecto', ''),
-            'rubro' => $request->get('rubro', ''),
-            'pagada' => $request->get('pagada', ''),
-            'desde' => $request->get('desde', ''),
-            'hasta' => $request->get('hasta', ''),
-        ];
+        $filters = $request->all();
 
         return view('oficina.antigua.index', compact('rows', 'proyectos', 'rubros', 'filters'));
     }
@@ -92,7 +84,13 @@ class OficinaAntiguaController extends Controller
             ->get();
 
         $data = [];
-        $data[] = ['Movimiento','Fecha','Usuario','Proyecto','Rubro','Monto','Descuento','Pagada','Documento','Empresa','NIT','Descripción'];
+        $data[] = [
+            'Movimiento','Fecha','Usuario','Proyecto','Rubro',
+            'Monto','Descuento','Pagada',
+            'No Documento','Empresa','NIT',
+            'No Documento Pago','Fecha Pago',
+            'Descripción'
+        ];
 
         foreach ($rows as $r) {
             $data[] = [
@@ -107,6 +105,8 @@ class OficinaAntiguaController extends Controller
                 $r->no_documento ?? '',
                 $r->empresa_nombre ?? '',
                 $r->nit ?? '',
+                $r->no_documento_pago ?? '',
+                $r->fecha_pago ?? '',
                 $r->descripcion ?? '',
             ];
         }
@@ -115,7 +115,6 @@ class OficinaAntiguaController extends Controller
         return Excel::download(new ArrayExport($data), $filename);
     }
 
-    // ---- lo que ya tenías (create/store/edit/update/destroy) queda igual ----
     public function create()
     {
         $proyectos = Proyecto::orderBy('nombre')->get();
@@ -149,6 +148,11 @@ class OficinaAntiguaController extends Controller
             'monto'           => ['required', 'numeric', 'min:0'],
             'descuento'       => ['nullable', 'numeric', 'min:0'],
             'pagada'          => ['nullable', 'boolean'],
+
+            // NUEVOS CAMPOS
+            'no_documento_pago' => ['nullable', 'string', 'max:100'],
+            'fecha_pago'        => ['nullable', 'date'],
+
             'archivo' => ['nullable', 'file', 'max:5120', 'mimes:pdf,jpg,jpeg,png'],
         ]);
 
@@ -157,6 +161,7 @@ class OficinaAntiguaController extends Controller
         $row->oficina = self::OFICINA;
         $row->user_id = $userId;
         $row->pagada  = (int)$request->has('pagada');
+
         [$path, $original, $mime] = $this->handleUpload($request);
         $row->archivo_path = $path;
         $row->archivo_original = $original;
@@ -200,19 +205,23 @@ class OficinaAntiguaController extends Controller
             'monto'           => ['required', 'numeric', 'min:0'],
             'descuento'       => ['nullable', 'numeric', 'min:0'],
             'pagada'          => ['nullable', 'boolean'],
-            'archivo' => ['nullable', 'file', 'max:5120', 'mimes:pdf,jpg,jpeg,png'],
 
+            // NUEVOS CAMPOS
+            'no_documento_pago' => ['nullable', 'string', 'max:100'],
+            'fecha_pago'        => ['nullable', 'date'],
+
+            'archivo' => ['nullable', 'file', 'max:5120', 'mimes:pdf,jpg,jpeg,png'],
         ]);
 
         $row->fill($data);
         $row->pagada = (int)$request->has('pagada');
-        if ($request->hasFile('archivo')) {
-        $this->deleteOldFile($row->archivo_path);
 
-        [$path, $original, $mime] = $this->handleUpload($request);
-        $row->archivo_path = $path;
-        $row->archivo_original = $original;
-        $row->archivo_mime = $mime;
+        if ($request->hasFile('archivo')) {
+            $this->deleteOldFile($row->archivo_path);
+            [$path, $original, $mime] = $this->handleUpload($request);
+            $row->archivo_path = $path;
+            $row->archivo_original = $original;
+            $row->archivo_mime = $mime;
         }
 
         $row->save();
@@ -253,7 +262,6 @@ class OficinaAntiguaController extends Controller
         $safeName = 'antigua_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
         $file->move($folder, $safeName);
 
-        // esto se guarda en DB (ruta pública)
         $path = 'uploads/oficina/' . $safeName;
 
         return [$path, $original, $mime];
@@ -276,6 +284,4 @@ class OficinaAntiguaController extends Controller
 
         return view('oficina.antigua.show', compact('row'));
     }
-
-
 }

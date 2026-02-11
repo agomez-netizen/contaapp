@@ -122,6 +122,11 @@
             <th class="text-end">Monto</th>
             <th>Documento</th>
             <th>Pagada</th>
+
+            {{-- NUEVO --}}
+            <th>No. Doc Pago</th>
+            <th>Fecha Pago</th>
+
             <th style="width:140px;">Acciones</th>
           </tr>
         </thead>
@@ -168,6 +173,17 @@
               @endif
             </td>
 
+            {{-- NUEVO --}}
+            <td>{{ $r->no_documento_pago ?? '—' }}</td>
+
+            <td>
+              @if(!empty($r->fecha_pago))
+                {{ \Carbon\Carbon::parse($r->fecha_pago)->format('d/m/Y') }}
+              @else
+                —
+              @endif
+            </td>
+
             <td onclick="event.stopPropagation()">
               <a class="btn btn-sm btn-outline-primary"
                  href="{{ route('oficina.antigua.edit', $r->id) }}">
@@ -189,7 +205,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="9" class="text-center text-muted py-4">
+            <td colspan="11" class="text-center text-muted py-4">
               No hay registros.
             </td>
           </tr>
@@ -206,5 +222,3 @@
 
 </div>
 @endsection
-
-

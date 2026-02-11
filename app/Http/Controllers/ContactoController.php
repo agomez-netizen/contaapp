@@ -72,6 +72,9 @@ class ContactoController extends Controller
             'direccion'   => ['nullable', 'string', 'max:255'],
             'nit'         => ['nullable', 'string', 'max:30'],
             'motivo'      => ['nullable', 'string', 'max:255'],
+            'email'     => ['nullable', 'email', 'max:150'],
+            'sitio_web' => ['nullable', 'url', 'max:150'],
+
         ]);
 
         Contacto::create($data);
@@ -93,7 +96,7 @@ class ContactoController extends Controller
 
         $contacto = Contacto::findOrFail($id);
         $proyectos = Proyecto::orderBy('nombre')->get();
-        $tipos = ['Empresa', 'Fundacion', 'Persona', 'ONG'];
+        $tipos = ['Empresa','Institución', 'Fundación', 'Persona', 'ONG'];
 
         return view('contactos.edit', compact('contacto', 'proyectos', 'tipos'));
     }

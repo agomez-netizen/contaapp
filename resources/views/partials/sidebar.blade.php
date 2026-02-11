@@ -280,7 +280,7 @@
             data-bs-placement="right"
             data-bs-container="body"
             title="Documentos por oficina">
-      <span class="navicon">🏢</span>
+      <span class="navicon">🏬</span>
       <span>Oficina</span>
       <span class="ms-auto navcaret">▾</span>
     </button>
@@ -295,7 +295,7 @@
            data-bs-placement="right"
            data-bs-container="body"
            title="Documentos de Oficina Antigua">
-          <span class="navicon">📂</span>
+          <span class="navicon">📋</span>
           <span>Antigua</span>
         </a>
 @endif
@@ -306,7 +306,7 @@
            data-bs-placement="right"
            data-bs-container="body"
            title="Contactos">
-          <span class="navicon">📂</span>
+          <span class="navicon">🧑‍💼</span>
           <span>Contactos</span>
         </a>
 

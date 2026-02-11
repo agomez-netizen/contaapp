@@ -26,7 +26,7 @@
         </div>
 
         <div class="col-md-3">
-          <div class="text-muted">Fecha</div>
+          <div class="text-muted">Fecha Documento</div>
           <div class="fw-semibold">{{ \Carbon\Carbon::parse($row->fecha_documento)->format('d/m/Y') }}</div>
         </div>
 
@@ -83,6 +83,30 @@
           <div class="text-muted">Teléfono</div>
           <div class="fw-semibold">{{ $row->telefono ?? '—' }}</div>
         </div>
+
+        {{-- ================== SECCIÓN PAGO ================== --}}
+        <div class="col-12 mt-2">
+          <hr>
+          <h5 class="fw-bold mb-0">Información de Pago</h5>
+          <div class="text-muted">Solo aplica cuando el documento ya fue pagado</div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="text-muted">No. Documento Pago</div>
+          <div class="fw-semibold">{{ $row->no_documento_pago ?? '—' }}</div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="text-muted">Fecha Pago</div>
+          <div class="fw-semibold">
+            @if(!empty($row->fecha_pago))
+              {{ \Carbon\Carbon::parse($row->fecha_pago)->format('d/m/Y') }}
+            @else
+              —
+            @endif
+          </div>
+        </div>
+        {{-- =================================================== --}}
 
         <div class="col-md-12">
           <div class="text-muted">Descripción</div>

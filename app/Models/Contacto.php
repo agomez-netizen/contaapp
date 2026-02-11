@@ -17,10 +17,13 @@ class Contacto extends Model
         'telefono',
         'extension',
         'correo',
+        'email',
+        'sitio_web',
         'direccion',
         'nit',
         'motivo',
     ];
+
 
     public function proyecto()
     {

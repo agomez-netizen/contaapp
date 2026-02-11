@@ -44,7 +44,7 @@
   </div>
 
   <div class="col-md-4">
-    <label class="form-label">Fecha</label>
+    <label class="form-label">Fecha Documento</label>
     <input type="date" name="fecha_documento" class="form-control"
            value="{{ old('fecha_documento', $row->fecha_documento ?? '') }}" required>
   </div>
@@ -111,11 +111,31 @@
 
   <div class="col-md-4 d-flex align-items-end">
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="pagada" value="1"
+      <input id="chk_pagada" class="form-check-input" type="checkbox" name="pagada" value="1"
         {{ old('pagada', $row->pagada ?? 0) ? 'checked' : '' }}>
-      <label class="form-check-label">Pagada</label>
+      <label class="form-check-label" for="chk_pagada">Pagada</label>
     </div>
   </div>
+
+  {{-- ================== SECCIÓN PAGO ================== --}}
+  <div class="col-12 mt-4">
+    <hr>
+    <h5 class="fw-bold mb-0">Información de Pago</h5>
+    <div class="text-muted">Se habilita automáticamente al marcar “Pagada”.</div>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">No. Documento Pago</label>
+    <input id="no_documento_pago" type="text" name="no_documento_pago" class="form-control"
+           value="{{ old('no_documento_pago', $row->no_documento_pago ?? '') }}">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Fecha Pago</label>
+    <input id="fecha_pago" type="date" name="fecha_pago" class="form-control"
+           value="{{ old('fecha_pago', $row->fecha_pago ?? '') }}">
+  </div>
+  {{-- =================================================== --}}
 
   {{-- ARCHIVO --}}
   <div class="col-12">
@@ -140,3 +160,37 @@
   </div>
 
 </div>
+
+{{-- JS: Habilitar/Deshabilitar sección pago según checkbox --}}
+<script>
+(function () {
+  function setPagoEnabled(enabled) {
+    const noDoc = document.getElementById('no_documento_pago');
+    const fPago = document.getElementById('fecha_pago');
+
+    if (!noDoc || !fPago) return;
+
+    noDoc.disabled = !enabled;
+    fPago.disabled = !enabled;
+
+    // Si se desmarca, limpiamos para que no se guarde basura
+    if (!enabled) {
+      noDoc.value = '';
+      fPago.value = '';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const chk = document.getElementById('chk_pagada');
+    if (!chk) return;
+
+    // Estado inicial
+    setPagoEnabled(chk.checked);
+
+    // Cambio
+    chk.addEventListener('change', function () {
+      setPagoEnabled(chk.checked);
+    });
+  });
+})();
+</script>

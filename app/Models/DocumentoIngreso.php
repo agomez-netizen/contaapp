@@ -27,10 +27,23 @@ class DocumentoIngreso extends Model
         'monto',
         'descuento',
         'pagada',
+
+        // ✅ NUEVOS CAMPOS (PAGO)
+        'no_documento_pago',
+        'fecha_pago',
+
         'archivo_path',
         'archivo_original',
         'archivo_mime',
         'user_id',
+    ];
+
+    protected $casts = [
+        'fecha_documento' => 'date',
+        'fecha_pago'      => 'date',
+        'pagada'          => 'boolean',
+        'monto'           => 'decimal:2',
+        'descuento'       => 'decimal:2',
     ];
 
     public function proyecto()
