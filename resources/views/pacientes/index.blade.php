@@ -11,10 +11,8 @@
       <div class="text-muted">Listado De Pacientes Ingresados</div>
     </div>
 
-    {{-- ✅ Botones derecha --}}
     <div class="d-flex gap-2">
-      <a href="{{ route('pacientes.export.excel', request()->query()) }}"
-         class="btn btn-outline-success">
+      <a href="{{ route('pacientes.export.excel', request()->query()) }}" class="btn btn-outline-success">
         📗 Exportar Excel
       </a>
 
@@ -24,17 +22,10 @@
     </div>
   </div>
 
-  {{-- Alert éxito (auto-cierra) --}}
   @if(session('ok'))
-    <div class="alert alert-success alert-dismissible fade show"
-         role="alert"
-         id="autoCloseAlert">
+    <div class="alert alert-success alert-dismissible fade show" role="alert" id="autoCloseAlert">
       {{ session('ok') }}
-
-      <button type="button"
-              class="btn-close"
-              data-bs-dismiss="alert"
-              aria-label="Cerrar"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 
     <script>
@@ -53,11 +44,10 @@
   <div class="card border-0 shadow-sm">
     <div class="card-body">
 
-      {{-- Buscador --}}
       <form class="row g-2 mb-3" method="GET" action="{{ route('pacientes.index') }}">
         <div class="col-md-10">
           <input type="text" name="q" class="form-control"
-                 placeholder="Buscar por nombre, DPI, teléfono, departamento o municipio..."
+                 placeholder="Buscar por nombre, DPI, teléfono, departamento, municipio, prioridad, consulta o tipo operación..."
                  value="{{ $q ?? '' }}">
         </div>
         <div class="col-md-2 d-grid">
@@ -71,50 +61,58 @@
             <tr>
               <th>#</th>
               <th>Nombre</th>
+              <th>Prioridad</th>
               <th>DPI</th>
               <th>Teléfono</th>
               <th>Departamento</th>
               <th>Municipio</th>
               <th>Consulta</th>
+              <th>Tipo Operación</th>
               <th class="text-end">Acciones</th>
             </tr>
           </thead>
 
           <tbody>
             @forelse($pacientes as $p)
-              <tr class="row-click"
+              @php $prio = $p->prioridad ?? 'NORMAL'; @endphp
+
+              <tr class="row-click {{ $prio === 'PRIORITARIO' ? 'table-warning' : '' }}"
                   data-href="{{ route('pacientes.show', $p->id_paciente) }}">
 
                 <td class="fw-semibold">{{ $p->id_paciente }}</td>
                 <td>{{ $p->nombre }}</td>
+
+                <td>
+                  @if($prio === 'PRIORITARIO')
+                    <span class="badge bg-danger">PRIORITARIO</span>
+                  @else
+                    <span class="badge bg-secondary">NORMAL</span>
+                  @endif
+                </td>
+
                 <td>{{ $p->dpi }}</td>
                 <td>{{ $p->telefono }}</td>
                 <td>{{ $p->departamento }}</td>
                 <td>{{ $p->municipio }}</td>
                 <td>{{ $p->tipo_consulta }}</td>
+                <td>{{ $p->tipo_operacion }}</td>
 
                 <td class="text-end">
                   <a href="{{ route('pacientes.edit', $p->id_paciente) }}"
-                     class="btn btn-sm btn-outline-primary"
-                     title="Editar">
-                    ✏️
-                  </a>
+                     class="btn btn-sm btn-outline-primary" title="Editar">✏️</a>
 
                   <form action="{{ route('pacientes.destroy', $p->id_paciente) }}"
-                        method="POST"
-                        class="d-inline"
+                        method="POST" class="d-inline"
                         onsubmit="return confirm('¿Eliminar este paciente?');">
                     @csrf
                     @method('DELETE')
-                    <button class="btn btn-sm btn-outline-danger" type="submit" title="Eliminar">
-                      🗑️
-                    </button>
+                    <button class="btn btn-sm btn-outline-danger" type="submit" title="Eliminar">🗑️</button>
                   </form>
                 </td>
               </tr>
             @empty
               <tr>
-                <td colspan="8" class="text-center text-muted py-4">
+                <td colspan="10" class="text-center text-muted py-4">
                   No hay pacientes registrados aún.
                 </td>
               </tr>
@@ -123,22 +121,15 @@
         </table>
       </div>
 
-      {{-- Paginación + conteo --}}
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-3">
         <div class="text-muted small">
-          Mostrando
-          <strong>{{ $pacientes->firstItem() ?? 0 }}</strong>
-          a
-          <strong>{{ $pacientes->lastItem() ?? 0 }}</strong>
-          de
-          <strong>{{ $pacientes->total() }}</strong>
-          registros
+          Mostrando <strong>{{ $pacientes->firstItem() ?? 0 }}</strong>
+          a <strong>{{ $pacientes->lastItem() ?? 0 }}</strong>
+          de <strong>{{ $pacientes->total() }}</strong> registros
         </div>
 
         @if($pacientes->hasPages())
-          <div>
-            {{ $pacientes->onEachSide(1)->links() }}
-          </div>
+          <div>{{ $pacientes->onEachSide(1)->links() }}</div>
         @endif
       </div>
 
@@ -147,7 +138,6 @@
 
 </div>
 
-{{-- Fila clickeable sin romper botones --}}
 <style>
   tr.row-click { cursor: pointer; }
   tr.row-click:hover { background: rgba(13,110,253,.06); }

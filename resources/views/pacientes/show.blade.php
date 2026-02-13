@@ -4,7 +4,6 @@
 
 @section('content')
 @php
-  // Helper para intentar varios nombres de columna (fallbacks)
   $get = function($obj, array $keys, $default='—') {
     foreach ($keys as $k) {
       if (is_object($obj) && isset($obj->{$k}) && $obj->{$k} !== null && $obj->{$k} !== '') {
@@ -17,14 +16,17 @@
   $nombre        = $get($paciente, ['nombre', 'nombre_paciente']);
   $dpi           = $get($paciente, ['dpi']);
   $edad          = $get($paciente, ['edad']);
+  $prioridad     = $get($paciente, ['prioridad'], 'NORMAL');
+  $consulta      = $get($paciente, ['tipo_consulta', 'consulta']);
+  $tipoOperacion = $get($paciente, ['tipo_operacion']);
+
   $carnet        = $get($paciente, ['no_carnet', 'carnet', 'numero_carnet']);
   $telefono      = $get($paciente, ['telefono', 'teléfono', 'tel']);
   $correo        = $get($paciente, ['correo_electronico', 'correo', 'email', 'e_mail']);
   $departamento  = $get($paciente, ['departamento']);
   $municipio     = $get($paciente, ['municipio']);
-  $consulta      = $get($paciente, ['consulta', 'tipo_consulta']);
   $direccion     = $get($paciente, ['direccion', 'dirección']);
-  $observaciones = $get($paciente, ['observaciones', 'comentarios', 'nota', 'notas']);
+  $observaciones = $get($paciente, ['observaciones', 'comentarios', 'nota', 'notas', 'descripcion']);
 @endphp
 
 <div class="container py-4">
@@ -42,7 +44,6 @@
     <div class="card-body">
       <div class="row g-3">
 
-        {{-- ================= DATOS DEL PACIENTE ================= --}}
         <div class="col-12">
           <h6 class="text-primary mb-2">Datos del Paciente</h6>
           <hr class="mt-0">
@@ -61,6 +62,27 @@
         <div class="col-md-4">
           <div class="text-muted small">Edad</div>
           <div class="fw-semibold">{{ $edad }}</div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="text-muted small">Prioridad</div>
+          <div class="fw-semibold">
+            @if($prioridad === 'PRIORITARIO')
+              <span class="badge bg-danger">PRIORITARIO</span>
+            @else
+              <span class="badge bg-secondary">NORMAL</span>
+            @endif
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="text-muted small">Consulta</div>
+          <div class="fw-semibold">{{ $consulta }}</div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="text-muted small">Tipo de Operación</div>
+          <div class="fw-semibold">{{ $tipoOperacion }}</div>
         </div>
 
         <div class="col-md-4">
@@ -88,11 +110,6 @@
           <div class="fw-semibold">{{ $municipio }}</div>
         </div>
 
-        <div class="col-md-4">
-          <div class="text-muted small">Consulta</div>
-          <div class="fw-semibold">{{ $consulta }}</div>
-        </div>
-
         @if($direccion !== '—')
         <div class="col-md-12">
           <div class="text-muted small">Dirección</div>
@@ -107,13 +124,10 @@
         </div>
         @endif
 
-        {{-- ================= NOTA ================= --}}
         <div class="col-12 mt-2">
           <div class="alert alert-light border mb-0">
             <div class="text-muted small">Nota</div>
-            <div class="fw-semibold">
-              Este registro se muestra en modo lectura.
-            </div>
+            <div class="fw-semibold">Este registro se muestra en modo lectura.</div>
           </div>
         </div>
 

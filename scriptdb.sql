@@ -587,3 +587,20 @@ ADD fecha_pago DATE NULL;
 
 
 ALTER TABLE contactos ADD contacto VARCHAR(150) NULL AFTER nombre;
+
+
+ALTER TABLE pacientes
+  MODIFY nombre VARCHAR(150) NULL,
+  MODIFY dpi VARCHAR(20) NULL,
+  MODIFY sexo ENUM('MASCULINO','FEMENINO') NULL,
+  MODIFY edad TINYINT NULL,
+  MODIFY departamento VARCHAR(80) NULL,
+  MODIFY municipio VARCHAR(80) NULL,
+  MODIFY tipo_consulta ENUM('CONSULTA GENERAL','CONSULTA ESPECIALIZADA') NULL,
+  MODIFY empresa ENUM('EMPRESA','MUNICIPALIDAD','REFIRIENTE') NULL,
+  MODIFY nombre_empresa VARCHAR(150) NULL,
+  MODIFY tipo_contacto ENUM('Call Center','Celular Personal','Redes Sociales','Referencia Personal') NULL;
+
+
+ALTER TABLE pacientes
+  ADD tipo_operacion VARCHAR(120) NULL AFTER tipo_consulta;

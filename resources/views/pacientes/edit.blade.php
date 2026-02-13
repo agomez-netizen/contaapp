@@ -31,7 +31,6 @@
   <div class="card border-0 shadow-sm">
     <div class="card-body">
 
-      {{-- FORM PRINCIPAL: UPDATE --}}
       <form method="POST" action="{{ route('pacientes.update', $paciente->id_paciente) }}">
         @csrf
         @method('PUT')
@@ -41,19 +40,19 @@
         <div class="row g-3 mb-4">
           <div class="col-md-6">
             <label class="form-label">Nombre del Paciente</label>
-            <input type="text" name="nombre" class="form-control" required
+            <input type="text" name="nombre" class="form-control"
                    value="{{ old('nombre', $paciente->nombre) }}">
           </div>
 
           <div class="col-md-6">
             <label class="form-label">DPI</label>
-            <input type="text" name="dpi" class="form-control" required
+            <input type="text" name="dpi" class="form-control"
                    value="{{ old('dpi', $paciente->dpi) }}">
           </div>
 
           <div class="col-md-4">
             <label class="form-label">Sexo</label>
-            <select name="sexo" class="form-select" required>
+            <select name="sexo" class="form-select">
               <option value="">Seleccione</option>
               <option value="MASCULINO" {{ old('sexo', $paciente->sexo)=='MASCULINO'?'selected':'' }}>MASCULINO</option>
               <option value="FEMENINO"  {{ old('sexo', $paciente->sexo)=='FEMENINO'?'selected':'' }}>FEMENINO</option>
@@ -62,8 +61,17 @@
 
           <div class="col-md-4">
             <label class="form-label">Edad</label>
-            <input type="number" name="edad" class="form-control" min="0" required
+            <input type="number" name="edad" class="form-control" min="0"
                    value="{{ old('edad', $paciente->edad) }}">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Prioridad</label>
+            @php $prioSel = old('prioridad', $paciente->prioridad ?? 'NORMAL'); @endphp
+            <select name="prioridad" class="form-select">
+              <option value="NORMAL" {{ $prioSel=='NORMAL'?'selected':'' }}>NORMAL</option>
+              <option value="PRIORITARIO" {{ $prioSel=='PRIORITARIO'?'selected':'' }}>PRIORITARIO</option>
+            </select>
           </div>
 
           <div class="col-md-4">
@@ -87,10 +95,10 @@
           <div class="col-md-4">
             <label class="form-label">Departamento</label>
             @php
-              $deps = ['Guatemala','Escuintla','Sacatepéquez','Chimaltenango','Quetzaltenango','Alta Verapaz','Baja Verapaz','Petén','Izabal'];
+              $deps = ['Guatemala','El Progreso','Sacatepéquez','Chimaltenango','Escuintla','Santa Rosa','Sololá','Totonicapán','Quetzaltenango','Suchitepéquez','Retalhuleu','San Marcos','Huehuetenango','Quiché','Baja Verapaz','Alta Verapaz','Petén','Izabal','Zacapa','Chiquimula','Jalapa','Jutiapa'];
               $depSel = old('departamento', $paciente->departamento);
             @endphp
-            <select name="departamento" class="form-select" required>
+            <select name="departamento" class="form-select">
               <option value="">Seleccione</option>
               @foreach($deps as $dep)
                 <option value="{{ $dep }}" {{ $depSel==$dep?'selected':'' }}>{{ $dep }}</option>
@@ -100,25 +108,15 @@
 
           <div class="col-md-4">
             <label class="form-label">Municipio</label>
-            @php
-              $muns = ['Guatemala','Mixco','Villa Nueva','Jocotenango','Chinautla','Escuintla'];
-              $munSel = old('municipio', $paciente->municipio);
-            @endphp
-<input
-    type="text"
-    name="municipio"
-    class="form-control"
-    value="{{ $munSel ?? '' }}"
-    placeholder="Ingrese municipio"
-    required
->
-
+            <input type="text" name="municipio" class="form-control"
+                   value="{{ old('municipio', $paciente->municipio) }}"
+                   placeholder="Ingrese municipio">
           </div>
 
           <div class="col-md-4">
             <label class="form-label">Tipo de Consulta</label>
             @php $tcSel = old('tipo_consulta', $paciente->tipo_consulta); @endphp
-            <select name="tipo_consulta" class="form-select" required>
+            <select name="tipo_consulta" class="form-select">
               <option value="">Seleccione</option>
               <option value="CONSULTA GENERAL" {{ $tcSel=='CONSULTA GENERAL'?'selected':'' }}>CONSULTA GENERAL</option>
               <option value="CONSULTA ESPECIALIZADA" {{ $tcSel=='CONSULTA ESPECIALIZADA'?'selected':'' }}>CONSULTA ESPECIALIZADA</option>
@@ -126,9 +124,16 @@
           </div>
 
           <div class="col-md-4">
+            <label class="form-label">Tipo de Operación</label>
+            <input type="text" name="tipo_operacion" class="form-control"
+                   value="{{ old('tipo_operacion', $paciente->tipo_operacion) }}"
+                   placeholder="Ej: Cesárea, Apendicectomía...">
+          </div>
+
+          <div class="col-md-4">
             <label class="form-label">Organización</label>
             @php $orgSel = old('empresa', $paciente->empresa); @endphp
-            <select name="empresa" class="form-select" required>
+            <select name="empresa" class="form-select">
               <option value="">Seleccione</option>
               <option value="EMPRESA" {{ $orgSel=='EMPRESA'?'selected':'' }}>EMPRESA</option>
               <option value="MUNICIPALIDAD" {{ $orgSel=='MUNICIPALIDAD'?'selected':'' }}>MUNICIPALIDAD</option>
@@ -138,7 +143,7 @@
 
           <div class="col-md-12">
             <label class="form-label">Nombre de la Empresa</label>
-            <input type="text" name="nombre_empresa" class="form-control" required
+            <input type="text" name="nombre_empresa" class="form-control"
                    value="{{ old('nombre_empresa', $paciente->nombre_empresa) }}">
           </div>
         </div>
@@ -164,7 +169,7 @@
               $tcs = ['Call Center','Celular Personal','Redes Sociales','Referencia Personal'];
               $tconSel = old('tipo_contacto', $paciente->tipo_contacto);
             @endphp
-            <select name="tipo_contacto" class="form-select" required>
+            <select name="tipo_contacto" class="form-select">
               <option value="">Seleccione</option>
               @foreach($tcs as $tc)
                 <option value="{{ $tc }}" {{ $tconSel==$tc?'selected':'' }}>{{ $tc }}</option>
@@ -188,21 +193,12 @@
           </div>
         </div>
 
-        {{-- BOTONES (SIN FORM ANIDADO) --}}
         <div class="d-flex justify-content-end gap-2">
-            <a href="{{ route('pacientes.index') }}"
-            class="btn btn-outline-secondary">
-               Cancelar
-            </a>
-
-          <button type="submit" class="btn btn-primary">
-            💾 Guardar cambios
-          </button>
+          <a href="{{ route('pacientes.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
         </div>
 
       </form>
-
-
 
     </div>
   </div>
