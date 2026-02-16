@@ -131,7 +131,7 @@
   </div>
 
   <div class="col-md-6">
-    <label class="form-label">No. Documento Pago</label>
+    <label class="form-label">No. Documento (Cheque/Transferencia/Deposito)</label>
     <input id="no_documento_pago" type="text" name="no_documento_pago" class="form-control"
            value="{{ old('no_documento_pago', $row->no_documento_pago ?? '') }}">
   </div>

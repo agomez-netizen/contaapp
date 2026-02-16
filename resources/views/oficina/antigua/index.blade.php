@@ -108,6 +108,30 @@
     </div>
   </form>
 
+
+
+@php
+  $hasTotal = !is_null($totalDocPago) && !is_null($noDocPago);
+@endphp
+
+<div class="alert {{ $hasTotal ? 'alert-info' : 'alert-light' }} d-flex justify-content-between align-items-center mt-2 mb-2">
+  <div class="fw-bold">
+    Total por No. Doc Pago
+  </div>
+
+  <div class="text-end">
+    @if($hasTotal)
+      <span class="me-2">Doc Pago: <b>{{ $noDocPago }}</b></span>
+      <span>Total: <b>Q {{ number_format($totalDocPago, 2) }}</b></span>
+    @else
+      <span class="text-muted">Escribe el No. Doc Pago y presiona <b>Aplicar</b> para ver el total.</span>
+    @endif
+  </div>
+</div>
+
+
+
+
   {{-- TABLA --}}
   <div class="card border-0 shadow-sm">
     <div class="table-responsive">

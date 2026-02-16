@@ -26,7 +26,7 @@
 
   // Permisos por módulo
   $canDashboard  = $isAdmin || $isGestor || $isDirector || $isSecretaria && !$isComunicador;
-  $canDonaciones = $isAdmin || $isGestor && !$isComunicador;
+  $canDonaciones = $isAdmin ||  $isSecretaria || $isGestor && !$isComunicador;
   $canPacientes  = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
   $canMedios     = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
 

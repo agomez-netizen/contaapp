@@ -62,20 +62,49 @@ class OficinaAntiguaController extends Controller
         return $query;
     }
 
-    public function index(Request $request)
-    {
-        $rows = $this->baseQuery($request)
-            ->orderByDesc('fecha_documento')
-            ->paginate(15)
-            ->withQueryString();
+public function index(Request $request)
+{
+    $rows = $this->baseQuery($request)
+        ->orderByDesc('fecha_documento')
+        ->paginate(15)
+        ->withQueryString();
 
-        $proyectos = Proyecto::orderBy('nombre')->get();
-        $rubros = Rubro::where('activo', 1)->orderBy('nombre')->get();
+    $proyectos = Proyecto::orderBy('nombre')->get();
+    $rubros = Rubro::where('activo', 1)->orderBy('nombre')->get();
 
-        $filters = $request->all();
+    $filters = $request->all();
 
-        return view('oficina.antigua.index', compact('rows', 'proyectos', 'rubros', 'filters'));
+    // ✅ total por No. Doc Pago (usando el buscador q)
+    $totalDocPago = null;
+    $noDocPago = null;
+
+    $q = trim((string)$request->get('q', ''));
+
+    if ($q !== '') {
+        // SOLO si existe coincidencia en no_documento_pago, entonces calculamos
+        $exists = DocumentoIngreso::where('oficina', self::OFICINA)
+            ->where('no_documento_pago', 'like', "%{$q}%")
+            ->exists();
+
+        if ($exists) {
+            $totalDocPago = (float) DocumentoIngreso::where('oficina', self::OFICINA)
+                ->where('no_documento_pago', 'like', "%{$q}%")
+                ->sum('monto');
+
+            $noDocPago = $q;
+        }
     }
+
+    return view('oficina.antigua.index', compact(
+        'rows',
+        'proyectos',
+        'rubros',
+        'filters',
+        'totalDocPago',
+        'noDocPago'
+    ));
+}
+
 
     public function exportExcel(Request $request)
     {
@@ -149,7 +178,6 @@ class OficinaAntiguaController extends Controller
             'descuento'       => ['nullable', 'numeric', 'min:0'],
             'pagada'          => ['nullable', 'boolean'],
 
-            // NUEVOS CAMPOS
             'no_documento_pago' => ['nullable', 'string', 'max:100'],
             'fecha_pago'        => ['nullable', 'date'],
 
@@ -206,7 +234,6 @@ class OficinaAntiguaController extends Controller
             'descuento'       => ['nullable', 'numeric', 'min:0'],
             'pagada'          => ['nullable', 'boolean'],
 
-            // NUEVOS CAMPOS
             'no_documento_pago' => ['nullable', 'string', 'max:100'],
             'fecha_pago'        => ['nullable', 'date'],
 
