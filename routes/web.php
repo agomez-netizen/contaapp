@@ -51,7 +51,7 @@ Route::middleware(['auth.custom'])->group(function () {
     // =========================
     // DONACIONES (ADMIN + GESTOR + DONACIONES)
     // =========================
-    Route::middleware(['role:ADMIN,GESTOR,DONACIONES'])->group(function () {
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES,SECRETARIA'])->group(function () {
 
         Route::get('/donaciones/index', [DonacionController::class, 'index'])->name('donaciones.index');
         Route::get('/donaciones/crear', [DonacionController::class, 'create'])->name('donaciones.create');
