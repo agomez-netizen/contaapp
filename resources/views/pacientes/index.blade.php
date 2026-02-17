@@ -64,8 +64,8 @@
               <th>Prioridad</th>
               <th>DPI</th>
               <th>Teléfono</th>
+              <th>Carnet</th>
               <th>Referido Por</th>
-
               <th>Consulta</th>
               <th>Tipo Operación</th>
               <th class="text-end">Acciones</th>
@@ -92,6 +92,7 @@
 
                 <td>{{ $p->dpi }}</td>
                 <td>{{ $p->telefono }}</td>
+                <td>{{ $p->carnet }}</td>
                 <td>{{ $p->referido_por }}</td>
                 <td>{{ $p->tipo_consulta }}</td>
                 <td>{{ $p->tipo_operacion }}</td>

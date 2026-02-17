@@ -48,7 +48,7 @@
         © {{ date('Y') }} AAPOS OFICINA ANTIGUA
         <div class="opacity-75">
             Ingeniería que impulsa resultados.
-            Arquitectura & Desarrollo <br> Ing. Aníbal Gómez
+            Arquitectura & Desarrollo <br> Ing. Aníbal Gómez <br>
     </div>
     </div>
     </div>
