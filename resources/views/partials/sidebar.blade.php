@@ -42,11 +42,11 @@
   $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isProyectos && !$isComunicador;; // ajustable
 
   // Mantenimientos
-  $canMaint      = $isAdmin || $isGestor && !$isComunicador;;
+  $canMaint      = $isAdmin||  $isOperador || $isGestor && !$isComunicador;;
 
   $canMaintProyectos     = $isAdmin || $isGestor || $isComunicador;
-  $canMaintTiposDonacion = $isAdmin || $isGestor && !$isComunicador;
-  $canMaintUbicaciones   = $isAdmin || $isGestor && !$isComunicador;
+  $canMaintTiposDonacion = $isAdmin || $isOperador|| $isGestor && !$isComunicador;
+  $canMaintUbicaciones   = $isAdmin || $isOperador || $isGestor && !$isComunicador;
   $canRubros = $isAdmin || $isGestor;
 
   // Gestor no puede Usuarios ni Roles

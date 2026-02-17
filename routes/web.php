@@ -137,6 +137,16 @@ Route::middleware(['auth.custom'])->group(function () {
 
     });
 
+  Route::middleware(['role:OPERADOR'])->group(function () {
+
+    Route::resource('tipos_donacion', TipoDonacionController::class);
+
+    Route::resource('ubicaciones', UbicacionController::class)
+            ->parameters(['ubicaciones' => 'ubicacion']);
+
+
+  });
+
     // =========================
     // MANTENIMIENTOS (SOLO ADMIN)
     // =========================
