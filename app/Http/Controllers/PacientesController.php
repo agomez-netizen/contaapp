@@ -25,7 +25,7 @@ class PacientesController extends Controller
                     ->orWhere('tipo_consulta', 'like', "%{$q}%");
             })
             ->orderByDesc('id_paciente')
-            ->paginate(5)
+            ->paginate(10)
             ->withQueryString();
 
         return view('pacientes.index', compact('pacientes', 'q'));
