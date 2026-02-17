@@ -11,10 +11,19 @@
       <div class="text-muted">Mantenimiento</div>
     </div>
 
-    <div class="d-flex flex-wrap gap-2">
-        <a href="{{ route('proyectos.export', request()->only('q')) }}"
-        class="btn btn-success">
-        Exportar Excel
+
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-success d-inline-flex align-items-center gap-2"
+            href="{{ route('proyectos.export.excel.descripcion', request()->query()) }}">
+                <i class="bi bi-file-earmark-excel-fill"></i>
+                Descripción
+            </a>
+
+
+        <a class="btn btn-success"
+        href="{{ route('proyectos.export.excel', request()->query()) }}">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i>
+            Asignaciones
         </a>
 
 

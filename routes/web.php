@@ -51,7 +51,7 @@ Route::middleware(['auth.custom'])->group(function () {
     // =========================
     // DONACIONES (ADMIN + GESTOR + DONACIONES)
     // =========================
-    Route::middleware(['role:ADMIN,GESTOR,DONACIONES,SECRETARIA'])->group(function () {
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES,SECRETARIA,OPERADOR'])->group(function () {
 
         Route::get('/donaciones/index', [DonacionController::class, 'index'])->name('donaciones.index');
         Route::get('/donaciones/crear', [DonacionController::class, 'create'])->name('donaciones.create');
@@ -103,7 +103,7 @@ Route::middleware(['auth.custom'])->group(function () {
     // =========================
     // MANTENIMIENTOS (ADMIN + GESTOR + DONACIONES)
     // =========================
-    Route::middleware(['role:ADMIN,GESTOR,DONACIONES'])->group(function () {
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES, OPERADOR'])->group(function () {
         Route::resource('proyectos', ProyectoController::class);
         Route::resource('tipos_donacion', TipoDonacionController::class);
 
@@ -126,6 +126,13 @@ Route::middleware(['auth.custom'])->group(function () {
             ->name('donaciones.export.pdf');
 
         Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
+
+        Route::get('/proyectos/export/excel', [ProyectoController::class, 'exportExcel'])
+    ->name('proyectos.export.excel');
+
+        Route::get('/proyectos/export/excel-descripcion',
+    [ProyectoController::class, 'exportExcelDescripcion']
+)->name('proyectos.export.excel.descripcion');
 
 
     });

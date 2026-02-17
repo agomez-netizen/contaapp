@@ -21,12 +21,13 @@
   $isProyectos  = $rolName === 'PROYECTOS';
   $isDirector   = $rolName === 'DIRECTOR';
   $isComunicador = $rolName === 'COMUNICADOR';
+  $isOperador   = $rolName === 'OPERADOR';
 
 
 
   // Permisos por módulo
-  $canDashboard  = $isAdmin || $isGestor || $isDirector || $isSecretaria && !$isComunicador;
-  $canDonaciones = $isAdmin ||  $isSecretaria || $isGestor && !$isComunicador;
+  $canDashboard  = $isAdmin || $isGestor || $isOperador || $isDirector || $isSecretaria && !$isComunicador;
+  $canDonaciones = $isAdmin ||  $isOperador || $isSecretaria || $isGestor && !$isComunicador;
   $canPacientes  = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
   $canMedios     = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
 
@@ -442,4 +443,12 @@
     </button>
   </form>
 
+</div>
+
+<div class="sidebar-footer text-center text-white-50 small py-3 border-top mt-auto">
+    © {{ date('Y') }} AAPOS OFICINA ANTIGUA
+    <div class="opacity-75">
+        Ingeniería que impulsa resultados.
+        Arquitectura & Desarrollo <br> Ing. Aníbal Gómez
+    </div>
 </div>
