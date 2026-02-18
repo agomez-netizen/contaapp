@@ -55,7 +55,7 @@ class ContactoController extends Controller
         $this->requireLogin();
 
         $proyectos = Proyecto::orderBy('nombre')->get();
-        $tipos = ['Empresa', 'Fundacion', 'Persona', 'ONG'];
+        $tipos = ['Asociación','Empresa', 'Fundación','Institución','ONG','Persona'];
 
         return view('contactos.create', compact('proyectos', 'tipos'));
     }
@@ -101,7 +101,7 @@ class ContactoController extends Controller
 
         $contacto = Contacto::findOrFail($id);
         $proyectos = Proyecto::orderBy('nombre')->get();
-        $tipos = ['Empresa','Institución', 'Fundación', 'Persona', 'ONG'];
+       $tipos = ['Asociación','Empresa', 'Fundación','Institución','ONG','Persona'];
 
         return view('contactos.edit', compact('contacto', 'proyectos', 'tipos'));
     }

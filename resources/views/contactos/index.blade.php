@@ -70,28 +70,24 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Proyecto</th>
             <th>Tipo</th>
             <th>Nombre</th>
             <th>Contacto</th>
             <th>Teléfono</th>
             <th>Ext.</th>
             <th>Correo</th>
-            <th>NIT</th>
             <th style="width:140px;"></th>
           </tr>
         </thead>
         <tbody>
           @forelse($contactos as $c)
             <tr style="cursor:pointer" onclick="window.location='{{ route('contactos.show', $c->id_contacto) }}'">
-              <td>{{ $c->proyecto->nombre ?? ('ID '.$c->id_proyecto) }}</td>
               <td>{{ $c->tipo }}</td>
               <td class="fw-semibold">{{ $c->nombre }}</td>
               <td>{{ $c->contacto ?? '—' }}</td>
               <td>{{ $c->telefono ?? '—' }}</td>
               <td>{{ $c->extension ?? '—' }}</td>
               <td>{{ $c->correo ?? '—' }}</td>
-              <td>{{ $c->nit ?? '—' }}</td>
               <td class="text-end" onclick="event.stopPropagation()">
                 <a href="{{ route('contactos.edit', $c->id_contacto) }}" class="btn btn-sm btn-outline-primary">✏️</a>
                 <form action="{{ route('contactos.destroy', $c->id_contacto) }}" method="POST" class="d-inline"
