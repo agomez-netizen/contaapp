@@ -128,35 +128,70 @@ public function store(Request $request)
         ]);
     }
 
-    public function dashboard(Request $request)
-    {
-        $desde = $request->get('desde');
-        $hasta = $request->get('hasta');
+public function dashboard(Request $request)
+{
+    $desde = $request->desde;
+    $hasta = $request->hasta;
 
-        $rows = DB::table('avances as a')
-            ->join('proyectos as p', 'p.id_proyecto', '=', 'a.id_proyecto')
-            ->when($desde, fn($q) => $q->whereDate('a.fecha', '>=', $desde))
-            ->when($hasta, fn($q) => $q->whereDate('a.fecha', '<=', $hasta))
-            ->select('p.nombre', DB::raw('COUNT(*) as total'))
-            ->groupBy('p.nombre')
-            ->orderByDesc('total')
-            ->get();
+    // ===============================
+    // Total de avances
+    // ===============================
+    $totalAvances = DB::table('avances')
+        ->when($desde, fn($q) => $q->whereDate('fecha', '>=', $desde))
+        ->when($hasta, fn($q) => $q->whereDate('fecha', '<=', $hasta))
+        ->count();
 
-        $labels = $rows->pluck('nombre')->values();
-        $data   = $rows->pluck('total')->values();
+    // ===============================
+    // Avances por proyecto
+    // (avances.id_proyecto -> proyectos.id_proyecto)
+    // ===============================
+    $rows = DB::table('avances as a')
+        ->join('proyectos as p', 'p.id_proyecto', '=', 'a.id_proyecto')
+        ->when($desde, fn($q) => $q->whereDate('a.fecha', '>=', $desde))
+        ->when($hasta, fn($q) => $q->whereDate('a.fecha', '<=', $hasta))
+        ->select('p.nombre as proyecto', DB::raw('COUNT(*) as total'))
+        ->groupBy('p.nombre')
+        ->orderByDesc('total')
+        ->get();
 
-        $totalAvances = $rows->sum('total');
-        $topProyecto  = $rows->first();
+    $labels = $rows->pluck('proyecto')->values();
+    $data   = $rows->pluck('total')->values();
 
-        return view('avances.dashboard', compact(
-            'labels',
-            'data',
-            'desde',
-            'hasta',
-            'totalAvances',
-            'topProyecto'
-        ));
-    }
+    $topProyecto = $rows->first();
+
+    // ===============================
+    // Rendimiento por usuario
+    // (avances.user_id -> usuarios.id_usuario)
+    // ===============================
+    $userRows = DB::table('avances as a')
+        ->join('usuarios as u', 'u.id_usuario', '=', 'a.user_id')
+        ->when($desde, fn($q) => $q->whereDate('a.fecha', '>=', $desde))
+        ->when($hasta, fn($q) => $q->whereDate('a.fecha', '<=', $hasta))
+        ->select(
+            DB::raw("CONCAT(u.nombre, ' ', u.apellido) as usuario"),
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy('u.nombre', 'u.apellido')
+        ->orderByDesc('total')
+        ->get();
+
+    $userLabels = $userRows->pluck('usuario')->values();
+    $userData   = $userRows->pluck('total')->values();
+
+    $topUsuario = $userRows->first();
+
+    return view('avances.dashboard', compact(
+        'labels',
+        'data',
+        'desde',
+        'hasta',
+        'totalAvances',
+        'topProyecto',
+        'userLabels',
+        'userData',
+        'topUsuario'
+    ));
+}
 
     public function exportExcel(Request $request)
     {

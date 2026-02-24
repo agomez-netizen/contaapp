@@ -85,6 +85,38 @@
     </div>
   </div>
 
+  <div class="row g-3 mt-3">
+  <div class="col-12 col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="text-muted">Usuario con más avances</div>
+        <div class="fs-5 fw-semibold">
+          {{ $topUsuario->usuario ?? '—' }}
+          @if(!empty($topUsuario))
+            <span class="badge bg-success ms-2">{{ $topUsuario->total }}</span>
+          @endif
+        </div>
+        <div class="text-muted small">
+          {{ ($desde || $hasta) ? 'Con filtro de fechas' : 'Sin filtro de fechas' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="fw-semibold mb-1">Rendimiento por usuario (barras)</div>
+        <div class="text-muted small mb-3">Cuenta cuántos avances ha registrado cada usuario.</div>
+
+        <div style="height: 360px;">
+          <canvas id="userBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 @endsection
 
@@ -122,5 +154,36 @@
         }
       });
     }
+
+     const userLabels = @json($userLabels ?? []);
+  const userData = @json($userData ?? []);
+
+  const uel = document.getElementById('userBarChart');
+  if (uel) {
+    new Chart(uel, {
+      type: 'bar',
+      data: {
+        labels: userLabels,
+        datasets: [{
+          label: 'Avances por usuario',
+          data: userData,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
   </script>
 @endpush
