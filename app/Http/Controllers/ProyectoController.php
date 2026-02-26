@@ -67,9 +67,10 @@ class ProyectoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nombre' => ['required', 'string', 'max:120'],
+            'nombre'      => ['required', 'string', 'max:120'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
-            'activo' => ['nullable', 'boolean'],
+            'direccion'   => ['nullable', 'string', 'max:255'],
+            'activo'      => ['nullable', 'boolean'],
         ]);
 
         $data['activo'] = $request->boolean('activo');
@@ -93,9 +94,10 @@ class ProyectoController extends Controller
     public function update(Request $request, Proyecto $proyecto)
     {
         $data = $request->validate([
-            'nombre' => ['required', 'string', 'max:120'],
+            'nombre'      => ['required', 'string', 'max:120'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
-            'activo' => ['nullable', 'boolean'],
+            'direccion'   => ['nullable', 'string', 'max:255'],
+            'activo'      => ['nullable', 'boolean'],
         ]);
 
         $data['activo'] = $request->boolean('activo');
@@ -115,28 +117,27 @@ class ProyectoController extends Controller
     }
 
     public function exportExcelDescripcion(Request $request)
-{
-    $q = trim((string) $request->get('q', ''));
+    {
+        $q = trim((string) $request->get('q', ''));
 
-    $items = Proyecto::query()
-        ->select(['id_proyecto', 'nombre', 'descripcion', 'activo'])
-        ->when($q !== '', fn($qq) => $qq->where('nombre', 'like', "%{$q}%"))
-        ->orderByDesc('id_proyecto')
-        ->get();
+        $items = Proyecto::query()
+            ->select(['id_proyecto', 'nombre', 'descripcion', 'direccion', 'activo'])
+            ->when($q !== '', fn($qq) => $qq->where('nombre', 'like', "%{$q}%"))
+            ->orderByDesc('id_proyecto')
+            ->get();
 
-    $rows = [];
-    $rows[] = ['Nombre', 'Descripción', 'Activo'];
+        $rows = [];
+        $rows[] = ['Nombre', 'Descripción', 'Dirección', 'Activo'];
 
-    foreach ($items as $p) {
-        $rows[] = [
-            (string) ($p->nombre ?? ''),
-            (string) ($p->descripcion ?? ''),
-            ($p->activo ? 'Sí' : 'No'),
-        ];
+        foreach ($items as $p) {
+            $rows[] = [
+                (string) ($p->nombre ?? ''),
+                (string) ($p->descripcion ?? ''),
+                (string) ($p->direccion ?? ''),
+                ($p->activo ? 'Sí' : 'No'),
+            ];
+        }
+
+        return Excel::download(new ArrayExport($rows), 'proyectos_descripcion.xlsx');
     }
-
-    return Excel::download(new ArrayExport($rows), 'proyectos_descripcion.xlsx');
-}
-
-
 }

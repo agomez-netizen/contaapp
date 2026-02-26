@@ -15,6 +15,14 @@
   @error('descripcion') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
+<div class="mb-3">
+    <label for="direccion" class="form-label">Documento del Proyecto</label>
+    <input type="text"
+           name="direccion"
+           class="form-control"
+           value="{{ old('direccion', $proyecto->direccion ?? '') }}">
+</div>
+
 <div class="form-check mb-3">
   <input class="form-check-input" type="checkbox" name="activo" value="1"
          id="activo"

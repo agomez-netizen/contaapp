@@ -24,7 +24,16 @@
       <div class="mt-3">
         <div class="text-muted mb-1">Descripción:</div>
         <div>{{ $proyecto->descripcion ?: '—' }}</div>
+        @if($proyecto->direccion)
+        <p>
+            <strong>URL:</strong>
+            <a href="{{ $proyecto->direccion }}" target="_blank">
+                {{ $proyecto->direccion }}
+            </a>
+        </p>
+    @endif
       </div>
+
     </div>
   </div>
 </div>

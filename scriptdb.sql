@@ -604,3 +604,8 @@ ALTER TABLE pacientes
 
 ALTER TABLE pacientes
   ADD tipo_operacion VARCHAR(120) NULL AFTER tipo_consulta;
+
+
+
+ALTER TABLE proyectos
+ADD direccion VARCHAR(255) NULL AFTER descripcion;
