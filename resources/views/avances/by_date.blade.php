@@ -3,37 +3,41 @@
 @section('content')
 <div class="container">
 
- <div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Avances por fecha</h3>
+  @if(session('success'))
+    <div class="alert alert-success">
+      {{ session('success') }}
+    </div>
+  @endif
 
-  <div class="d-flex gap-2">
-    <a
-      href="{{ route('avances.export.excel', request()->all()) }}"
-      class="btn btn-success"
-    >
-      📥 Exportar Excel
-    </a>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Avances por fecha</h3>
 
-    <a class="btn btn-danger"
-   href="{{ route('avances.exportPdf', request()->query()) }}">
-  Exportar PDF
-</a>
+    <div class="d-flex gap-2">
+      <a
+        href="{{ route('avances.export.excel', request()->all()) }}"
+        class="btn btn-success"
+      >
+        📥 Exportar Excel
+      </a>
 
-    @php
-    $u = session('user');
-    $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
-    @endphp
-    @if($rolName !== 'COMUNICADOR')
-    <a href="{{ route('avances.create') }}" class="btn btn-outline-secondary">
-        ← Registrar avance
-    </a>
-    @endif
+      <a class="btn btn-danger"
+         href="{{ route('avances.exportPdf', request()->query()) }}">
+        Exportar PDF
+      </a>
+
+      @php
+        $u = session('user');
+        $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+      @endphp
+
+      @if($rolName !== 'COMUNICADOR')
+        <a href="{{ route('avances.create') }}" class="btn btn-outline-secondary">
+          ← Registrar avance
+        </a>
+      @endif
+    </div>
   </div>
-</div>
 
-
-
-  {{-- Filtros --}}
   <form method="GET" action="{{ route('avances.byDate') }}" class="card p-3 mb-3">
     <div class="row g-3 align-items-end">
       <div class="col-md-5">
@@ -64,36 +68,48 @@
     </div>
   </form>
 
-  {{-- Resultados --}}
   @forelse($grouped as $fecha => $items)
     <div class="mb-4">
       <div class="d-flex align-items-center gap-2 mb-2">
         <span class="badge bg-dark">
-            {{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}
-            </span>
+          {{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}
+        </span>
         <small class="text-muted">({{ $items->count() }} avances)</small>
       </div>
 
       @foreach($items as $a)
+        @php
+          $canEdit = $isAdmin || ((int)$a->user_id === (int)$userId);
+        @endphp
+
         <div class="card mb-2">
           <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div>
-                <div class="fw-bold">📁 {{ $a->proyecto->nombre ?? 'Sin proyecto' }}</div>
-                <div>{!! $a->descripcion !!}</div>
-                <small class="text-muted">
+            <div class="d-flex justify-content-between gap-3">
+              <div class="flex-grow-1">
+                <div class="fw-bold mb-1">📁 {{ $a->proyecto->nombre ?? 'Sin proyecto' }}</div>
+                <div class="mb-2">{!! $a->descripcion !!}</div>
+
+                <small class="text-muted d-block">
                   ✍️
-                    @if($a->usuario)
+                  @if($a->usuario)
                     {{ $a->usuario->nombre }} {{ $a->usuario->apellido }}
-                    @else
+                  @else
                     Usuario eliminado
-                    @endif
+                  @endif
                 </small>
               </div>
 
-              <small class="text-muted">
-                🕒 {{ optional($a->created_at)->format('d/m/Y H:i') }}
-              </small>
+              <div class="text-end">
+                <small class="text-muted d-block mb-2">
+                  🕒 {{ optional($a->created_at)->format('d/m/Y H:i') }}
+                </small>
+
+                @if($canEdit)
+                  <a href="{{ route('avances.edit', $a->id_avance) }}" class="btn btn-sm btn-warning">
+                    ✏️
+                  </a>
+                @endif
+              </div>
             </div>
           </div>
         </div>

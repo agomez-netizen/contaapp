@@ -207,6 +207,8 @@ Route::middleware(['auth.custom'])->group(function () {
         ->name('avances.export.excel');
 
     Route::get('/avances/export-pdf', [AvanceController::class, 'exportPdf'])->name('avances.exportPdf');
+    Route::get('/avances/{id}/editar', [AvanceController::class, 'edit'])->name('avances.edit');
+    Route::put('/avances/{id}', [AvanceController::class, 'update'])->name('avances.update');
 
 
     Route::get('/rubros', [RubroController::class, 'index'])->name('rubros.index');

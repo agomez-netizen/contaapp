@@ -609,3 +609,20 @@ ALTER TABLE pacientes
 
 ALTER TABLE proyectos
 ADD direccion VARCHAR(255) NULL AFTER descripcion;
+
+
+CREATE TABLE historial_avances (
+    id_historial INT AUTO_INCREMENT PRIMARY KEY,
+    id_avance INT NOT NULL,
+    descripcion_anterior TEXT NULL,
+    descripcion_nueva TEXT NULL,
+    fecha_anterior DATE NULL,
+    fecha_nueva DATE NULL,
+    id_proyecto_anterior INT NULL,
+    id_proyecto_nuevo INT NULL,
+    editado_por INT NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_id_avance (id_avance),
+    INDEX idx_editado_por (editado_por)
+);
