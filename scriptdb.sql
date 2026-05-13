@@ -741,3 +741,11 @@ INSERT INTO subproyectos (id_proyecto, nombre) VALUES
 (2, 'Equipos'),
 (2, 'Software'),
 (2, 'Capacitación');
+
+
+
+ALTER TABLE movimientos_financieros
+ADD COLUMN monto_quetzales DECIMAL(14,2) NULL AFTER monto,
+ADD COLUMN monto_dolares DECIMAL(14,2) NULL AFTER monto_quetzales,
+ADD COLUMN tipo_cambio DECIMAL(10,4) NULL AFTER monto_dolares,
+ADD COLUMN link_drive VARCHAR(500) NULL AFTER archivo_mime;

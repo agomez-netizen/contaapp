@@ -29,6 +29,10 @@ class MovimientoFinanciero extends Model
         'id_usuario',
         'accion',
         'id_subproyecto',
+        'monto_quetzales',
+        'monto_dolares',
+        'tipo_cambio',
+        'link_drive',
     ];
 
 
