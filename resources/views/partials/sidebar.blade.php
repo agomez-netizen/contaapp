@@ -84,10 +84,13 @@
         || request()->routeIs('proyectosaapos.*');
 
 
-  $ofOpen = request()->routeIs('oficina.antigua.*')
-         || request()->routeIs('oficina.rambla.*');
+$ofOpen = request()->routeIs('oficina.antigua.*')
+       || request()->routeIs('oficina.rambla.*')
+       || request()->routeIs('contactos.*')
+       || request()->routeIs('finanzas.*');
 
   $maintOpen = request()->routeIs('proyectos.*')
+            || request()->routeIs('subproyectos.*')
             || request()->routeIs('tipos_donacion.*')
             || request()->routeIs('usuarios.*')
             || request()->routeIs('roles.*')
@@ -283,53 +286,64 @@
 
 
 
-  {{-- ================= OFICINA ================= --}}
-  @if($canOficina)
-    <button type="button"
-            class="navitem btn-reset {{ $ofOpen ? 'active' : '' }}"
-            data-bs-toggle="collapse"
-            data-bs-target="#{{ $idOficina }}"
-            aria-expanded="{{ $ofOpen ? 'true' : 'false' }}"
-            aria-controls="{{ $idOficina }}"
-            data-bs-toggle="tooltip"
-            data-bs-placement="right"
-            data-bs-container="body"
-            title="Documentos por oficina">
-      <span class="navicon">🏬</span>
-      <span>Oficina</span>
-      <span class="ms-auto navcaret">▾</span>
-    </button>
+{{-- ================= OFICINA ================= --}}
+@if($canOficina)
 
-    <div class="collapse {{ $ofOpen ? 'show' : '' }}" id="{{ $idOficina }}">
-      <div class="d-grid gap-1 ms-4 mt-1">
+<button type="button"
+        class="navitem btn-reset {{ $ofOpen ? 'active' : '' }}"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ $idOficina }}"
+        aria-expanded="{{ $ofOpen ? 'true' : 'false' }}"
+        aria-controls="{{ $idOficina }}"
+        title="Documentos por oficina">
 
-  @if($isAdmin || $isGestor)
-        <a href="{{ route('oficina.antigua.index') }}"
-           class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
-           data-bs-toggle="tooltip"
-           data-bs-placement="right"
-           data-bs-container="body"
-           title="Documentos de Oficina Antigua">
-          <span class="navicon">📋</span>
-          <span>Antigua</span>
-        </a>
-@endif
+    <span class="navicon">🏬</span>
+    <span>Oficina</span>
+    <span class="ms-auto navcaret">▾</span>
+
+</button>
+
+<div class="collapse {{ $ofOpen ? 'show' : '' }}"
+     id="{{ $idOficina }}">
+
+    <div class="d-grid gap-1 ms-4 mt-1">
+
+        @if($isAdmin || $isGestor)
+
+            <a href="{{ route('oficina.antigua.index') }}"
+               class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
+               title="Documentos de Oficina Antigua">
+
+                <span class="navicon">📋</span>
+                <span>Antigua</span>
+
+            </a>
+
+        @endif
 
         <a href="{{ route('contactos.index') }}"
-           class="navitem {{ request()->routeIs('contactos.antigua.*') ? 'active' : '' }}"
-           data-bs-toggle="tooltip"
-           data-bs-placement="right"
-           data-bs-container="body"
+           class="navitem {{ request()->routeIs('contactos.*') ? 'active' : '' }}"
            title="Contactos">
-          <span class="navicon">🧑‍💼</span>
-          <span>Contactos</span>
+
+            <span class="navicon">🧑‍💼</span>
+            <span>Contactos</span>
+
         </a>
 
+        <!--a href="{{ route('finanzas.historial') }}"
+           class="navitem {{ request()->routeIs('finanzas.*') ? 'active' : '' }}"
+           title="Historial Financiero">
 
+            <span class="navicon">📊</span>
+            <span>Control Financiero De Proyectos</span>
 
-      </div>
+        </!--a>-->
+
     </div>
-  @endif
+
+</div>
+
+@endif
 
   {{-- ================= MANTENIMIENTOS ================= --}}
   @if($canMaint)
@@ -362,6 +376,15 @@
             <span>Proyectos</span>
           </a>
         @endif
+
+        <a href="{{ route('subproyectos.index') }}"
+   class="navitem {{ request()->routeIs('subproyectos.*') ? 'active' : '' }}"
+   title="Subproyectos">
+
+    <span class="navicon">🧩</span>
+    <span>Subproyectos</span>
+
+</a>
 
         @if($canMaintTiposDonacion)
           <a href="{{ route('tipos_donacion.index') }}"

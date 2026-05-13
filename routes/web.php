@@ -16,7 +16,8 @@ use App\Http\Controllers\MediosController;
 use App\Http\Controllers\ProyectosAAPOSController;
 use App\Http\Controllers\CalidadVidaController;
 use App\Http\Controllers\AvanceController;
- use App\Http\Controllers\ProyectoUsuarioController;
+use App\Http\Controllers\ProyectoUsuarioController;
+use App\Http\Controllers\SubproyectoController;
 
 // ✅ Estos dos te faltaban en el archivo que me pasaste (si ya existen, perfecto)
 use App\Http\Controllers\DocumentoAntiguaController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\DocumentoZona14Controller;
 use App\Http\Controllers\OficinaAntiguaController;
 use App\Http\Controllers\RubroController;
 use App\Http\Controllers\ContactoController;
+use App\Http\Controllers\MovimientoFinancieroController;
 
 
 use Illuminate\Support\Facades\Schedule;
@@ -231,7 +233,22 @@ Route::delete('/contactos/{id}', [ContactoController::class, 'destroy'])->name('
 Route::get('/contactos-export/excel', [ContactoController::class, 'exportExcel'])
     ->name('contactos.export.excel');
 
+Route::get('/finanzas/historial', [MovimientoFinancieroController::class, 'historial'])
+    ->name('finanzas.historial');
 
+
+Route::get('/finanzas/historial', [MovimientoFinancieroController::class, 'historial'])
+    ->name('finanzas.historial');
+
+Route::get('/finanzas/exportar', [MovimientoFinancieroController::class, 'exportar'])
+    ->name('finanzas.exportar');
+
+Route::resource('finanzas', MovimientoFinancieroController::class);
+
+Route::get('/subproyectos/proyecto/{id}', [SubproyectoController::class, 'porProyecto'])
+    ->name('subproyectos.porProyecto');
+
+Route::resource('subproyectos', SubproyectoController::class);
     // =========================
     // OFICINA
     // =========================
@@ -258,8 +275,6 @@ Route::get('/contactos-export/excel', [ContactoController::class, 'exportExcel']
     Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
     Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
     Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
-
-
 
 
 

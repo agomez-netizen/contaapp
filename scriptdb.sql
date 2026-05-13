@@ -626,3 +626,118 @@ CREATE TABLE historial_avances (
     INDEX idx_id_avance (id_avance),
     INDEX idx_editado_por (editado_por)
 );
+
+
+
+CREATE TABLE movimientos_financieros (
+  id_movimiento INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+  tipo_movimiento ENUM('INGRESO','EGRESO') NOT NULL,
+
+  oficina VARCHAR(20) NULL,
+  id_proyecto INT UNSIGNED NOT NULL,
+  id_rubro INT UNSIGNED NULL,
+
+  tipo_documento ENUM('FACTURA','RECIBO','COTIZACION','OTRO') NOT NULL,
+  no_documento VARCHAR(100) NULL,
+  fecha_documento DATE NOT NULL,
+
+  empresa VARCHAR(150) NULL,
+  proveedor VARCHAR(150) NULL,
+
+  monto DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  descripcion TEXT NULL,
+
+  archivo_path VARCHAR(255) NULL,
+  archivo_original VARCHAR(255) NULL,
+  archivo_mime VARCHAR(120) NULL,
+
+  id_usuario INT NOT NULL,
+  accion VARCHAR(50) NULL,
+
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX idx_fin_tipo (tipo_movimiento),
+  INDEX idx_fin_fecha (fecha_documento),
+  INDEX idx_fin_proyecto (id_proyecto),
+  INDEX idx_fin_rubro (id_rubro),
+  INDEX idx_fin_usuario (id_usuario),
+
+  CONSTRAINT fk_fin_proyecto
+    FOREIGN KEY (id_proyecto) REFERENCES proyectos(id_proyecto)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_fin_rubro
+    FOREIGN KEY (id_rubro) REFERENCES rubros(id_rubro)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+
+  CONSTRAINT fk_fin_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+
+INSERT INTO rubros (nombre) VALUES
+('Medicamentos'),
+('Tecnología'),
+('Equipo Médico'),
+('Materiales de Construccion'),
+('Materiales de Electricos'),
+('Carpinteria'),
+('Herreria'),
+('Trabajos de obra Gris'),
+('Electrodomesticos'),
+('Publicidad'),
+('Logística'),
+('Mantenimiento'),
+('Honorarios'),
+('Servicios Básicos'),
+('Compras'),
+('Donaciones'),
+('Patrocinios'),
+('Recaudación'),
+('Aportes'),
+('Convenios'),
+('Subvenciones');
+
+
+
+
+CREATE TABLE subproyectos (
+  id_subproyecto INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  id_proyecto INT UNSIGNED NOT NULL,
+  nombre VARCHAR(150) NOT NULL,
+  descripcion VARCHAR(255) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX idx_subproyecto_proyecto (id_proyecto),
+
+  CONSTRAINT fk_subproyectos_proyecto
+    FOREIGN KEY (id_proyecto) REFERENCES proyectos(id_proyecto)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+ALTER TABLE movimientos_financieros
+ADD COLUMN id_subproyecto INT UNSIGNED NULL AFTER id_proyecto;
+
+ALTER TABLE movimientos_financieros
+ADD CONSTRAINT fk_fin_subproyecto
+FOREIGN KEY (id_subproyecto) REFERENCES subproyectos(id_subproyecto)
+ON UPDATE CASCADE
+ON DELETE SET NULL;
+
+INSERT INTO subproyectos (id_proyecto, nombre) VALUES
+(2, 'Infraestructura'),
+(2, 'Equipos'),
+(2, 'Software'),
+(2, 'Capacitación');
