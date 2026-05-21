@@ -330,14 +330,13 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
 
         </a>
 
-        <!--a href="{{ route('finanzas.historial') }}"
+        <a href="{{ route('finanzas.historial') }}"
            class="navitem {{ request()->routeIs('finanzas.*') ? 'active' : '' }}"
-           title="Historial Financiero">
-
+           title="Costos de Proyectos">
             <span class="navicon">📊</span>
-            <span>Control Financiero De Proyectos</span>
+            <span>Costos de Proyectos</span>
 
-        </!--a>-->
+        </a>
 
     </div>
 
