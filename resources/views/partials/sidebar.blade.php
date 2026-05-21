@@ -334,7 +334,7 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
            class="navitem {{ request()->routeIs('finanzas.*') ? 'active' : '' }}"
            title="Costos de Proyectos">
             <span class="navicon">📊</span>
-            <span>Costos de Proyectos</span>
+            <span>Control de Proyectos</span>
 
         </a>
 

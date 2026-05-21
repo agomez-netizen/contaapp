@@ -6,7 +6,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="mb-0">Control Financiero de Proyecto</h3>
+            <h3 class="mb-0">Costos de Proyectos</h3>
             <small class="text-muted">Registro y control de movimientos financieros</small>
         </div>
 
