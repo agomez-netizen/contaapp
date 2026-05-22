@@ -13,17 +13,19 @@
         <label class="form-label">Tipo Documento</label>
         <select name="tipo_documento" class="form-select" required>
             <option value="">Seleccione</option>
+            <option value="FACTURA">Factura</option>
+            <option value="RECIBO DE DONACION">Recibo</option>
+            <option value="COTIZACION">Cotización</option>
+            <option value="PRESUPUESTO">Presupuesto</option>
+            <option value="TRANSFERENCIA">Transferencia</option>
             <option value="CARTA">Carta</option>
             <option value="CHEQUE">Cheque</option>
-            <option value="COTIZACION">Cotización</option>
             <option value="DEPOSITO">Deposito</option>
-            <option value="FACTURA">Factura</option>
-            <option value="PRESUPUESTO">Presupuesto</option>
-            <option value="RECIBO DE DONACION">Recibo</option>
-            <option value="TRANSFERENCIA">Transferencia</option>
             <option value="OTRO">Otro</option>
         </select>
     </div>
+
+
 
     <div class="col-md-4">
         <label class="form-label">No. Documento</label>

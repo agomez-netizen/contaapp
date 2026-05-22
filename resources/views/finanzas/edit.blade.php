@@ -44,7 +44,7 @@
                         <select name="tipo_documento" class="form-select" required>
                             <option value="FACTURA" {{ $movimiento->tipo_documento == 'FACTURA' ? 'selected' : '' }}>Factura</option>
                             <option value="RECIBO DE DONACION" {{ $movimiento->tipo_documento == 'RECIBO DE DONACION' ? 'selected' : '' }}>Recibo de Donación</option>
-                            <option value="COTIZACION" {{ $movimiento->tipo_documento == 'COTIZACION' ? 'selected' : '' }}>Cotización</option>
+                            <option value="COTIZACION" {{ $movimiento->tipo_documento == 'COTIZACIÓN' ? 'selected' : '' }}>Cotización</option>
                             <option value="PRESUPUESTO" {{ $movimiento->tipo_documento == 'PRESUPUESTO' ? 'selected' : '' }}>Presupuesto</option>
                             <option value="TRANSFERENCIA" {{ $movimiento->tipo_documento == 'TRANSFERENCIA' ? 'selected' : '' }}>Transferencia</option>
                             <option value="CARTA" {{ $movimiento->tipo_documento == 'CARTA' ? 'selected' : '' }}>Carta</option>
