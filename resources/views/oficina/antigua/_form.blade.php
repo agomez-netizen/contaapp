@@ -18,6 +18,10 @@
         {{ old('tipo_documento', $row->tipo_documento ?? '')=='RECIBO'?'selected':'' }}>
         Recibo
       </option>
+           <option value="COMPROBANTE"
+        {{ old('tipo_documento', $row->tipo_documento ?? '')=='COMPROBANTE'?'selected':'' }}>
+        Comprobante
+      </option>
     </select>
   </div>
 

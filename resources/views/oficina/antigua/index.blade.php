@@ -197,7 +197,7 @@
               @endif
             </td>
 
-            {{-- NUEVO --}}
+           
             <td>{{ $r->no_documento_pago ?? '—' }}</td>
 
             <td>

@@ -23,8 +23,11 @@ class OficinaAntiguaController extends Controller
         $desde    = trim((string)$request->get('desde', ''));
         $hasta    = trim((string)$request->get('hasta', ''));
 
+        //$query = DocumentoIngreso::with(['proyecto', 'rubro', 'usuario'])
+        //    ->where('oficina', self::OFICINA);
+
         $query = DocumentoIngreso::with(['proyecto', 'rubro', 'usuario'])
-            ->where('oficina', self::OFICINA);
+            ->whereRaw('UPPER(TRIM(oficina)) = ?', [self::OFICINA]);
 
         if ($q !== '') {
             $query->where(function ($qq) use ($q) {
@@ -157,7 +160,7 @@ public function index(Request $request)
         $userId = $u['id_usuario'] ?? null;
 
         $data = $request->validate([
-            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO'],
+            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO,COMPROBANTE'],
             'id_proyecto'     => ['required', 'integer'],
             'id_rubro'        => ['nullable', 'integer'],
 
@@ -213,7 +216,7 @@ public function index(Request $request)
         $row = DocumentoIngreso::where('oficina', self::OFICINA)->findOrFail($id);
 
         $data = $request->validate([
-            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO'],
+            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO,COMPROBANTE'],
             'id_proyecto'     => ['required', 'integer'],
             'id_rubro'        => ['nullable', 'integer'],
 
