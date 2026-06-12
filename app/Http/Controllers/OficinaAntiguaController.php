@@ -79,24 +79,38 @@ public function index(Request $request)
 
     // ✅ total por No. Doc Pago (usando el buscador q)
     $totalDocPago = null;
+    $sobrante = null;
+    $diferencia = null;
     $noDocPago = null;
 
-    $q = trim((string)$request->get('q', ''));
+   $q = trim((string)$request->get('q', ''));
 
-    if ($q !== '') {
-        // SOLO si existe coincidencia en no_documento_pago, entonces calculamos
-        $exists = DocumentoIngreso::where('oficina', self::OFICINA)
+if ($q !== '') {
+
+    $exists = DocumentoIngreso::whereRaw('UPPER(TRIM(oficina)) = ?', [self::OFICINA])
+        ->where('no_documento_pago', 'like', "%{$q}%")
+        ->exists();
+
+    if ($exists) {
+
+        // SUMA TODO MENOS SOBRANTE
+        $totalDocPago = (float) DocumentoIngreso::whereRaw('UPPER(TRIM(oficina)) = ?', [self::OFICINA])
             ->where('no_documento_pago', 'like', "%{$q}%")
-            ->exists();
+            ->where('tipo_documento', '<>', 'SOBRANTE')
+            ->sum('monto');
 
-        if ($exists) {
-            $totalDocPago = (float) DocumentoIngreso::where('oficina', self::OFICINA)
-                ->where('no_documento_pago', 'like', "%{$q}%")
-                ->sum('monto');
+        // OBTIENE EL MONTO DEL SOBRANTE
+        $sobrante = (float) DocumentoIngreso::whereRaw('UPPER(TRIM(oficina)) = ?', [self::OFICINA])
+            ->where('no_documento_pago', 'like', "%{$q}%")
+            ->where('tipo_documento', 'SOBRANTE')
+            ->sum('monto');
 
-            $noDocPago = $q;
-        }
+        // DIFERENCIA
+        $diferencia = $sobrante - $totalDocPago;
+
+        $noDocPago = $q;
     }
+}
 
     return view('oficina.antigua.index', compact(
         'rows',
@@ -104,6 +118,8 @@ public function index(Request $request)
         'rubros',
         'filters',
         'totalDocPago',
+        'sobrante',
+        'diferencia',
         'noDocPago'
     ));
 }
@@ -160,7 +176,7 @@ public function index(Request $request)
         $userId = $u['id_usuario'] ?? null;
 
         $data = $request->validate([
-            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO,COMPROBANTE'],
+            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO,COMPROBANTE','SOBRANTE'],
             'id_proyecto'     => ['required', 'integer'],
             'id_rubro'        => ['nullable', 'integer'],
 
@@ -216,7 +232,7 @@ public function index(Request $request)
         $row = DocumentoIngreso::where('oficina', self::OFICINA)->findOrFail($id);
 
         $data = $request->validate([
-            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO,COMPROBANTE'],
+            'tipo_documento'  => ['required', 'in:FACTURA,COTIZACION,RECIBO,COMPROBANTE','SOBRANTE'],
             'id_proyecto'     => ['required', 'integer'],
             'id_rubro'        => ['nullable', 'integer'],
 

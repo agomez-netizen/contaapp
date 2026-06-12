@@ -123,126 +123,94 @@
     @if($hasTotal)
       <span class="me-2">Doc Pago: <b>{{ $noDocPago }}</b></span>
       <span>Total: <b>Q {{ number_format($totalDocPago, 2) }}</b></span>
+      <span>Sobrante: <b>Q {{ number_format($sobrante,2) }}</b></span>
     @else
       <span class="text-muted">Escribe el No. Doc Pago y presiona <b>Aplicar</b> para ver el total.</span>
     @endif
   </div>
 </div>
 
+{{-- TABLA --}}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th>Serie</th>
+          <th>Documento</th>
+          <th>Proyecto</th>
+          <th class="text-end">Monto</th>
+          <th>No. Doc Pago</th>
+          <th>Fecha Pago</th>
+          <th style="width:140px;">Acciones</th>
+        </tr>
+      </thead>
 
+      <tbody>
+      @forelse($rows as $r)
+        <tr role="button"
+            style="cursor:pointer"
+            onclick="window.location='{{ route('oficina.antigua.show', $r->id) }}'">
 
+          <td>{{ \Carbon\Carbon::parse($r->fecha_documento)->format('d/m/Y') }}</td>
+          <td>{{ $r->serie ?? '—' }}</td>
 
-  {{-- TABLA --}}
-  <div class="card border-0 shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Movimiento</th>
-            <th>Fecha</th>
-            <th>Usuario</th>
-            <th>Proyecto</th>
-            <th>Rubro</th>
-            <th class="text-end">Monto</th>
-            <th>Documento</th>
-            <th>Pagada</th>
+          <td>
+            {{ $r->no_documento ?? '—' }}
+            <br>
+            <small class="text-muted">{{ $r->tipo_documento }}</small>
+          </td>
 
-            {{-- NUEVO --}}
-            <th>No. Doc Pago</th>
-            <th>Fecha Pago</th>
+          <td>{{ $r->proyecto->nombre ?? '—' }}</td>
 
-            <th style="width:140px;">Acciones</th>
-          </tr>
-        </thead>
+          <td class="text-end">
+            Q {{ number_format((float)$r->monto, 2) }}
+          </td>
 
-        <tbody>
-        @forelse($rows as $r)
-          <tr role="button"
-              style="cursor:pointer"
-              onclick="window.location='{{ route('oficina.antigua.show', $r->id) }}'">
+          <td>{{ $r->no_documento_pago ?? '—' }}</td>
 
-            <td>
-              <span class="badge bg-dark">{{ $r->tipo_documento }}</span>
-            </td>
+          <td>
+            @if(!empty($r->fecha_pago))
+              {{ \Carbon\Carbon::parse($r->fecha_pago)->format('d/m/Y') }}
+            @else
+              —
+            @endif
+          </td>
 
-            <td>{{ \Carbon\Carbon::parse($r->fecha_documento)->format('d/m/Y') }}</td>
+          <td onclick="event.stopPropagation()">
+            <a class="btn btn-sm btn-outline-primary"
+               href="{{ route('oficina.antigua.edit', $r->id) }}">
+              ✏️
+            </a>
 
-            <td>{{ $r->usuario->nombre ?? '—' }}</td>
-
-            <td>{{ $r->proyecto->nombre ?? '—' }}</td>
-
-            <td>{{ $r->rubro->nombre ?? '—' }}</td>
-
-            <td class="text-end">
-              Q {{ number_format((float)$r->monto, 2) }}
-            </td>
-
-            <td>
-              @if($r->archivo_path)
-                <a href="{{ asset($r->archivo_path) }}"
-                   target="_blank"
-                   onclick="event.stopPropagation()">
-                  Ver
-                </a>
-              @else
-                —
-              @endif
-            </td>
-
-            <td>
-              @if($r->pagada)
-                <span class="badge bg-success">Sí</span>
-              @else
-                <span class="badge bg-secondary">No</span>
-              @endif
-            </td>
-
-           
-            <td>{{ $r->no_documento_pago ?? '—' }}</td>
-
-            <td>
-              @if(!empty($r->fecha_pago))
-                {{ \Carbon\Carbon::parse($r->fecha_pago)->format('d/m/Y') }}
-              @else
-                —
-              @endif
-            </td>
-
-            <td onclick="event.stopPropagation()">
-              <a class="btn btn-sm btn-outline-primary"
-                 href="{{ route('oficina.antigua.edit', $r->id) }}">
-                ✏️
-              </a>
-
-              <form class="d-inline"
-                    method="post"
-                    action="{{ route('oficina.antigua.destroy', $r->id) }}"
-                    onsubmit="event.stopPropagation(); return confirm('¿Eliminar este registro?');">
-                @csrf
-                @method('DELETE')
-                <button class="btn btn-sm btn-outline-danger">
-                  🗑️
-                </button>
-              </form>
-            </td>
-
-          </tr>
-        @empty
-          <tr>
-            <td colspan="11" class="text-center text-muted py-4">
-              No hay registros.
-            </td>
-          </tr>
-        @endforelse
-        </tbody>
-
-      </table>
-    </div>
-
-    <div class="card-body">
-      {{ $rows->links() }}
-    </div>
+            <form class="d-inline"
+                  method="post"
+                  action="{{ route('oficina.antigua.destroy', $r->id) }}"
+                  onsubmit="event.stopPropagation(); return confirm('¿Eliminar este registro?');">
+              @csrf
+              @method('DELETE')
+              <button class="btn btn-sm btn-outline-danger">
+                🗑️
+              </button>
+            </form>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            No hay registros.
+          </td>
+        </tr>
+      @endforelse
+      </tbody>
+    </table>
   </div>
+
+  <div class="card-body">
+    {{ $rows->links() }}
+  </div>
+</div>
 
 </div>
 @endsection
