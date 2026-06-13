@@ -315,7 +315,7 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
                title="Documentos de Oficina Antigua">
 
                 <span class="navicon">📋</span>
-                <span>Antigua</span>
+                <span>Caja Chica</span>
 
             </a>
 
@@ -334,7 +334,7 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
            class="navitem {{ request()->routeIs('finanzas.*') ? 'active' : '' }}"
            title="Costos de Proyectos">
             <span class="navicon">📊</span>
-            <span>Control de Proyectos</span>
+            <span>Bitácora Financiera Proyectos</span>
 
         </a>
 
