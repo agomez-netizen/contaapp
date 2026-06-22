@@ -83,7 +83,7 @@ class DonacionController extends Controller
     {
 
          if (!$this->puedeModificarDonaciones()) {
-               abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+               abort(403, 'No tienes permiso para editar registros de Donaciones.');
          }
 
         $donacion = Donacion::where('id_donacion', $id)->firstOrFail();
@@ -103,7 +103,7 @@ class DonacionController extends Controller
     {
 
          if (!$this->puedeModificarDonaciones()) {
-               abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+               abort(403, 'No tienes permiso para editar registros de Donaciones.');
          }
 
         $donacion = Donacion::where('id_donacion', $id)->firstOrFail();
