@@ -221,6 +221,9 @@ if ($q !== '') {
 
     public function edit($id)
     {
+         if (!$this->puedeModificarCajaChica()) {
+        abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+        }
         $row = DocumentoIngreso::where('oficina', self::OFICINA)->findOrFail($id);
         $proyectos = Proyecto::orderBy('nombre')->get();
         $rubros = Rubro::where('activo', 1)->orderBy('nombre')->get();
@@ -229,6 +232,10 @@ if ($q !== '') {
 
     public function update(Request $request, $id)
     {
+         if (!$this->puedeModificarCajaChica()) {
+        abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+        }
+
         $row = DocumentoIngreso::where('oficina', self::OFICINA)->findOrFail($id);
 
         $data = $request->validate([
@@ -277,6 +284,10 @@ if ($q !== '') {
 
     public function destroy($id)
     {
+        if (!$this->puedeModificarCajaChica()) {
+            abort(403, 'No tienes permiso para eliminar registros de Caja Chica.');
+        }
+
         $row = DocumentoIngreso::where('oficina', self::OFICINA)->findOrFail($id);
         $this->deleteOldFile($row->archivo_path);
         $row->delete();
@@ -330,4 +341,14 @@ if ($q !== '') {
 
         return view('oficina.antigua.show', compact('row'));
     }
+
+    private function puedeModificarCajaChica(): bool
+    {
+        $u = session('user');
+        $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+
+        return in_array($rolName, ['ADMIN', 'GESTOR', 'DONACIONES'], true);
+    }
+
+
 }

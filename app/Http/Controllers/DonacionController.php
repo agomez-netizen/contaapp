@@ -81,6 +81,11 @@ class DonacionController extends Controller
 
     public function edit($id)
     {
+
+         if (!$this->puedeModificarDonaciones()) {
+               abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+         }
+
         $donacion = Donacion::where('id_donacion', $id)->firstOrFail();
 
         if ((int)($donacion->bloqueado ?? 0) === 1) {
@@ -96,6 +101,11 @@ class DonacionController extends Controller
 
     public function update(Request $request, $id)
     {
+
+         if (!$this->puedeModificarDonaciones()) {
+               abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+         }
+
         $donacion = Donacion::where('id_donacion', $id)->firstOrFail();
 
         if ((int)($donacion->bloqueado ?? 0) === 1) {
@@ -146,6 +156,11 @@ class DonacionController extends Controller
 
     public function destroy($id)
     {
+
+         if (!$this->puedeModificarDonaciones()) {
+               abort(403, 'No tienes permiso para editar registros de Caja Chica.');
+         }
+
         $donacion = Donacion::where('id_donacion', $id)->firstOrFail();
 
         if ((int)($donacion->bloqueado ?? 0) === 1) {
@@ -463,4 +478,14 @@ class DonacionController extends Controller
 
         return response()->json(['ok' => true, 'bloqueado' => (int)$donacion->bloqueado]);
     }
+
+
+       private function puedeModificarDonaciones(): bool
+    {
+        $u = session('user');
+        $rolName = strtoupper(trim($u['rol'] ?? $u['nombre_rol'] ?? ''));
+
+        return in_array($rolName, ['ADMIN', 'GESTOR', 'DONACIONES', 'SECRETARIA'], true);
+    }
+
 }

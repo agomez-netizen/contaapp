@@ -32,21 +32,21 @@
   $canMedios     = $isAdmin || $isGestor || $isSecretaria && !$isComunicador;
 
 
-  $canProyectos  = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isDirector  || $isComunicador;;
+  $canProyectos  = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isDirector  || $isComunicador ;
 
   // Subpermisos dentro de Proyectos
   $canAvances    = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isComunicador;;
   $canMetricas   = $isAdmin || $isGestor || $isDirector && !$isComunicador;
 
   // Oficina (si quieres limitarlo por rol, aquí lo haces)
-  $canOficina    = $isAdmin || $isGestor || $isSecretaria || $isProyectos && !$isComunicador;; // ajustable
+  $canOficina    = $isAdmin || $isGestor ||  $isOperador || $isSecretaria  || $isProyectos && !$isComunicador;; // ajustable
 
   // Mantenimientos
-  $canMaint      = $isAdmin||  $isOperador || $isGestor && !$isComunicador;;
+  $canMaint      = $isAdmin || $isGestor && !$isComunicador;;
 
   $canMaintProyectos     = $isAdmin || $isGestor || $isComunicador;
-  $canMaintTiposDonacion = $isAdmin || $isOperador|| $isGestor && !$isComunicador;
-  $canMaintUbicaciones   = $isAdmin || $isOperador || $isGestor && !$isComunicador;
+  $canMaintTiposDonacion = $isAdmin || $isGestor && !$isComunicador;
+  $canMaintUbicaciones   = $isAdmin  || $isGestor && !$isComunicador;
   $canRubros = $isAdmin || $isGestor;
 
   // Gestor no puede Usuarios ni Roles
@@ -308,7 +308,7 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
 
     <div class="d-grid gap-1 ms-4 mt-1">
 
-        @if($isAdmin || $isGestor)
+        @if($isAdmin || $isGestor ||   $isOperador  )
 
             <a href="{{ route('oficina.antigua.index') }}"
                class="navitem {{ request()->routeIs('oficina.antigua.*') ? 'active' : '' }}"
@@ -321,6 +321,7 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
 
         @endif
 
+         @if($isAdmin || $isGestor )
         <a href="{{ route('contactos.index') }}"
            class="navitem {{ request()->routeIs('contactos.*') ? 'active' : '' }}"
            title="Contactos">
@@ -337,7 +338,7 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
             <span>Bitácora Financiera Proyectos</span>
 
         </a>
-
+        @endif
     </div>
 
 </div>
