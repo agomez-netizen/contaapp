@@ -322,7 +322,9 @@
 
     <div>
       <h4 class="mb-1">Porcentaje de Avance por Proyecto</h4>
-      <div class="text-muted">Control Interno AAPOS</div>
+      <div class="text-muted">El porcentaje se calcula tomando la cantidad de avances registrados para un proyecto y dividiéndola entre el total de avances registrados en todos los proyectos del sistema. El resultado se multiplica por 100 para obtener el porcentaje.</div>
+<div class="text-muted">
+      Porcentaje de un proyecto =(Cantidad de avances del proyecto / Total de avances de todos los proyectos) × 100 </div>
     </div>
 <div class="row mb-4">
     <div class="col-12">
