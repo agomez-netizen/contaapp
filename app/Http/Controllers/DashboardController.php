@@ -91,6 +91,18 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->get();
 
+
+        // ===== AVANCES POR PROYECTO =====
+            $avancesPorProyecto = DB::table('avances as a')
+                ->join('proyectos as p', 'p.id_proyecto', '=', 'a.id_proyecto')
+                ->selectRaw('
+                    p.nombre AS label,
+                    COUNT(a.id_avance) AS total
+                ')
+                ->groupBy('p.id_proyecto', 'p.nombre')
+                ->orderByDesc('total')
+                ->get();
+
         // ===== LISTADO =====
         $donaciones = (clone $base)
             ->select(
@@ -125,8 +137,14 @@ class DashboardController extends Controller
         return view('dashboard', compact(
             'donaciones', 'q', 'from', 'to', 'tipo', 'proyecto',
             'tipos', 'proyectos', 'stats',
-            'porTipo', 'porProyecto',
-            'resumenTipos', 'totalGeneralTipos'
+            'porTipo',
+            'porProyecto',
+            'avancesPorProyecto',
+            'resumenTipos',
+            'totalGeneralTipos',
+            
+
+
         ));
     }
 

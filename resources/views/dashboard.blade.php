@@ -318,7 +318,32 @@
   </div>
 </div>
 
+{{-- ===== GRÁFICA DE BARRAS POR PORCENTAJE ===== --}}
 
+    <div>
+      <h4 class="mb-1">Porcentaje de Avance por Proyecto</h4>
+      <div class="text-muted">Control Interno AAPOS</div>
+    </div>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <h6 class="fw-semibold mb-3">
+                    📊
+                Avances por Proyecto </h6>
+
+                <div style="height:600px;">
+                    <canvas id="barChart"></canvas>
+                </div>
+
+                <div id="barChartEmpty" class="text-muted small mt-2 d-none">
+                    Sin datos para graficar.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 
@@ -387,5 +412,65 @@
   makeDoughnut('chartProyecto', 'chartProyectoEmpty', porProyectoData);
 
   // Nota: tu scatter ya lo manejas aparte (si tienes JS adicional, se queda igual)
+// ===============================
+// GRÁFICA DE BARRAS POR PROYECTO
+// ===============================
+const avancesPorProyectoData = @json($avancesPorProyecto);
+
+const labelsBar = avancesPorProyectoData.map(item => item.label);
+const valoresBar = avancesPorProyectoData.map(item => Number(item.total));
+
+const totalBar = valoresBar.reduce((a, b) => a + b, 0);
+
+const porcentajes = valoresBar.map(v =>
+    totalBar > 0 ? Number(((v / totalBar) * 100).toFixed(2)) : 0
+);
+
+const ctx = document.getElementById('barChart');
+
+if (ctx) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labelsBar,
+            datasets: [{
+                label: 'Porcentaje de avances',
+                data: porcentajes,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const i = context.dataIndex;
+                            return `${porcentajes[i]}% (${valoresBar[i]} avances)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: value => value + '%'
+                    }
+                },
+                y: {
+                    ticks: {
+                        autoSkip: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+
 </script>
 @endsection
