@@ -18,14 +18,13 @@ use App\Http\Controllers\CalidadVidaController;
 use App\Http\Controllers\AvanceController;
 use App\Http\Controllers\ProyectoUsuarioController;
 use App\Http\Controllers\SubproyectoController;
-
-// ✅ Estos dos te faltaban en el archivo que me pasaste (si ya existen, perfecto)
 use App\Http\Controllers\DocumentoAntiguaController;
 use App\Http\Controllers\DocumentoZona14Controller;
 use App\Http\Controllers\OficinaAntiguaController;
 use App\Http\Controllers\RubroController;
 use App\Http\Controllers\ContactoController;
 use App\Http\Controllers\MovimientoFinancieroController;
+use App\Http\Controllers\CooperantesController;
 
 
 use Illuminate\Support\Facades\Schedule;
@@ -49,6 +48,7 @@ Route::middleware(['auth.custom'])->group(function () {
 
     Route::get('/dashboard/scatter', [DashboardController::class, 'scatter'])
         ->name('dashboard.scatter');
+
 
     // =========================
     // DONACIONES (ADMIN + GESTOR + DONACIONES)
@@ -105,7 +105,7 @@ Route::middleware(['auth.custom'])->group(function () {
     // =========================
     // MANTENIMIENTOS (ADMIN + GESTOR + DONACIONES)
     // =========================
-    Route::middleware(['role:ADMIN,GESTOR,DONACIONES, OPERADOR'])->group(function () {
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES,SECRETARIA,OPERADOR,PROYECTOS'])->group(function () {
         Route::resource('proyectos', ProyectoController::class);
         Route::resource('tipos_donacion', TipoDonacionController::class);
 
@@ -137,17 +137,24 @@ Route::middleware(['auth.custom'])->group(function () {
 )->name('proyectos.export.excel.descripcion');
 
 
+Route::resource('cooperantes', CooperantesController::class);
+Route::get('/cooperantes-exportar', [CooperantesController::class, 'exportarExcel'])
+    ->name('cooperantes.exportar');
+
     });
 
-  Route::middleware(['role:OPERADOR'])->group(function () {
+// =========================
+// MANTENIMIENTOS
+// ADMIN + GESTOR + DONACIONES + OPERADOR
+// =========================
+Route::middleware(['role:ADMIN,GESTOR,DONACIONES,OPERADOR'])->group(function () {
 
     Route::resource('tipos_donacion', TipoDonacionController::class);
 
     Route::resource('ubicaciones', UbicacionController::class)
-            ->parameters(['ubicaciones' => 'ubicacion']);
+        ->parameters(['ubicaciones' => 'ubicacion']);
 
-
-  });
+});
 
     // =========================
     // MANTENIMIENTOS (SOLO ADMIN)
@@ -275,7 +282,6 @@ Route::resource('subproyectos', SubproyectoController::class);
     Route::get('/{id}/edit', [OficinaAntiguaController::class, 'edit'])->name('oficina.antigua.edit');
     Route::put('/{id}', [OficinaAntiguaController::class, 'update'])->name('oficina.antigua.update');
     Route::delete('/{id}', [OficinaAntiguaController::class, 'destroy'])->name('oficina.antigua.destroy');
-
 
 
 

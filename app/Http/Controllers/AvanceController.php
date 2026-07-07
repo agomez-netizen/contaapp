@@ -279,13 +279,14 @@ public function update(Request $request, $id)
 
         $userRows = DB::table('avances as a')
             ->join('usuarios as u', 'u.id_usuario', '=', 'a.user_id')
+            ->whereNotIn('u.id_usuario', [13, 14, 15]) // Excluir estos usuarios
             ->when($desde, fn($q) => $q->whereDate('a.fecha', '>=', $desde))
             ->when($hasta, fn($q) => $q->whereDate('a.fecha', '<=', $hasta))
             ->select(
                 DB::raw("CONCAT(u.nombre, ' ', u.apellido) as usuario"),
                 DB::raw('COUNT(*) as total')
             )
-            ->groupBy('u.nombre', 'u.apellido')
+            ->groupBy('u.id_usuario', 'u.nombre', 'u.apellido')
             ->orderByDesc('total')
             ->get();
 

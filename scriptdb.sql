@@ -749,3 +749,149 @@ ADD COLUMN monto_quetzales DECIMAL(14,2) NULL AFTER monto,
 ADD COLUMN monto_dolares DECIMAL(14,2) NULL AFTER monto_quetzales,
 ADD COLUMN tipo_cambio DECIMAL(10,4) NULL AFTER monto_dolares,
 ADD COLUMN link_drive VARCHAR(500) NULL AFTER archivo_mime;
+
+
+
+
+
+
+CREATE TABLE organizaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    tipo_organizacion VARCHAR(100),
+    pais VARCHAR(100),
+    direccion TEXT,
+    correo_general VARCHAR(150),
+    area_apoyo TEXT,
+    enfoque_geografico VARCHAR(150),
+    idioma_comunicacion VARCHAR(100),
+    descripcion TEXT,
+    monto_estimado VARCHAR(100),
+    prioridad ENUM('Alta','Media','Baja') DEFAULT 'Media',
+    estado ENUM('Identificada','Contacto inicial','En seguimiento','Aplicado','Aprobado','Rechazado','Inactiva') DEFAULT 'Identificada',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE contactos_organizacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    cargo VARCHAR(150),
+    correo VARCHAR(150),
+    telefono VARCHAR(50),
+    whatsapp VARCHAR(50),
+    idioma VARCHAR(100),
+    medio_preferido VARCHAR(100),
+    notas TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+CREATE TABLE telefonos_organizacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    tipo VARCHAR(50),
+    numero VARCHAR(50) NOT NULL,
+    extension VARCHAR(20),
+    pais VARCHAR(100),
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+CREATE TABLE webs_organizacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    tipo VARCHAR(100),
+    url VARCHAR(500) NOT NULL,
+    descripcion TEXT,
+    activo TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+CREATE TABLE redes_organizacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    red_social VARCHAR(100),
+    url VARCHAR(500),
+    usuario VARCHAR(150),
+    notas TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+CREATE TABLE convocatorias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    nombre VARCHAR(255) NOT NULL,
+    tipo_apoyo VARCHAR(100),
+    fecha_apertura DATE,
+    fecha_cierre DATE,
+    monto_minimo DECIMAL(12,2),
+    monto_maximo DECIMAL(12,2),
+    moneda VARCHAR(20) DEFAULT 'USD',
+    periodicidad VARCHAR(100),
+    areas_prioritarias TEXT,
+    requisitos_clave TEXT,
+    enlace VARCHAR(500),
+    estado ENUM('Activa','Pendiente','Cerrada','Aplicada','Descartada') DEFAULT 'Pendiente',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+CREATE TABLE proyectos_aapos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    nombre VARCHAR(255) NOT NULL,
+    categoria VARCHAR(100),
+    presupuesto_estimado DECIMAL(12,2),
+    moneda VARCHAR(20) DEFAULT 'USD',
+    beneficiarios TEXT,
+    estado VARCHAR(100),
+    documentacion_lista VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE proyectos_organizacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    proyecto_id INT NOT NULL,
+    compatibilidad ENUM('Alta','Media','Baja','En evaluación') DEFAULT 'En evaluación',
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE,
+    FOREIGN KEY (proyecto_id) REFERENCES proyectos_aapos(id) ON DELETE CASCADE
+);
+
+CREATE TABLE seguimientos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    fecha DATE NOT NULL,
+    tipo_contacto VARCHAR(100),
+    descripcion TEXT,
+    responsable VARCHAR(150),
+    proximo_seguimiento DATE,
+    resultado VARCHAR(150),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+CREATE TABLE documentos_requeridos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT NOT NULL,
+    documento VARCHAR(255) NOT NULL,
+    disponible ENUM('SI','NO','PENDIENTE') DEFAULT 'PENDIENTE',
+    responsable VARCHAR(150),
+    fecha_actualizacion DATE,
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones(id) ON DELETE CASCADE
+);
+
+INSERT INTO proyectos_aapos
+(codigo, nombre, categoria, presupuesto_estimado, moneda, beneficiarios, estado, documentacion_lista)
+VALUES
+('DIG-001', 'AAPOS Impact Platform', 'Tecnología / Transformación Digital', 50000, 'USD', '+540,000 impactos anuales', 'Formulación', '80%');

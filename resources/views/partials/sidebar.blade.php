@@ -48,6 +48,8 @@
   $canMaintTiposDonacion = $isAdmin || $isGestor && !$isComunicador;
   $canMaintUbicaciones   = $isAdmin  || $isGestor && !$isComunicador;
   $canRubros = $isAdmin || $isGestor;
+  // Crowdfunding
+  $canCrowdfunding = $isAdmin || $isGestor || $isProyectos;
 
   // Gestor no puede Usuarios ni Roles
   $canMaintUsuarios = $isAdmin;
@@ -64,6 +66,7 @@
   $idProyectosAapos = "menuProyectosAapos-{$scope}";
   $idOficina        = "menuOficina-{$scope}";
   $idMantenimientos = "menuMantenimientos-{$scope}";
+  $idCrowdfunding = "menuCrowdfunding-{$scope}";
 
   // Para abrir submenús cuando estás dentro
   $donOpen  = request()->routeIs('donaciones.*');
@@ -88,6 +91,8 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
        || request()->routeIs('oficina.rambla.*')
        || request()->routeIs('contactos.*')
        || request()->routeIs('finanzas.*');
+
+$crowOpen = request()->routeIs('cooperantes.*');
 
   $maintOpen = request()->routeIs('proyectos.*')
             || request()->routeIs('subproyectos.*')
@@ -339,6 +344,46 @@ $ofOpen = request()->routeIs('oficina.antigua.*')
 
         </a>
         @endif
+    </div>
+
+</div>
+
+@endif
+
+{{-- ================= CROWDFUNDING ================= --}}
+@if($canCrowdfunding)
+
+<button type="button"
+        class="navitem btn-reset {{ $crowOpen ? 'active' : '' }}"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ $idCrowdfunding }}"
+        aria-expanded="{{ $crowOpen ? 'true' : 'false' }}"
+        aria-controls="{{ $idCrowdfunding }}"
+        title="Gestión de convocatorias y subvenciones">
+
+    <span class="navicon">🌎</span>
+    <span>Crowdfunding</span>
+    <span class="ms-auto navcaret">▾</span>
+
+</button>
+
+
+<div class="collapse {{ $crowOpen ? 'show' : '' }}"
+     id="{{ $idCrowdfunding }}">
+
+    <div class="d-grid gap-1 ms-4 mt-1">
+
+
+        <a href="{{ route('cooperantes.index') }}"
+           class="navitem {{ request()->routeIs('cooperantes.*') ? 'active' : '' }}"
+           title="Directorio de convocatorias">
+
+            <span class="navicon">💶</span>
+            <span>Convocatorias</span>
+
+        </a>
+
+
     </div>
 
 </div>
