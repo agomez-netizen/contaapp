@@ -895,3 +895,18 @@ INSERT INTO proyectos_aapos
 (codigo, nombre, categoria, presupuesto_estimado, moneda, beneficiarios, estado, documentacion_lista)
 VALUES
 ('DIG-001', 'AAPOS Impact Platform', 'Tecnología / Transformación Digital', 50000, 'USD', '+540,000 impactos anuales', 'Formulación', '80%');
+
+
+ALTER TABLE convocatorias
+ADD COLUMN alerta_7_dias TINYINT(1) DEFAULT 1 AFTER fecha_cierre,
+ADD COLUMN alerta_enviada TINYINT(1) DEFAULT 0 AFTER alerta_7_dias,
+ADD COLUMN fecha_alerta_enviada DATETIME NULL AFTER alerta_enviada,
+ADD COLUMN correo_alerta VARCHAR(150) NULL AFTER fecha_alerta_enviada;
+
+
+UPDATE convocatorias
+SET
+    alerta_7_dias = 1,
+    alerta_enviada = 0,
+    correo_alerta = 'agomez@amigosproobras.org'
+WHERE nombre LIKE '%TELUS%Segunda Convocatoria%';

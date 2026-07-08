@@ -42,4 +42,9 @@ class Organizacion extends Model
     {
         return $this->hasMany(RedOrganizacion::class, 'organizacion_id');
     }
+
+    public function convocatorias()
+{
+    return $this->hasMany(Convocatoria::class, 'organizacion_id');
+}
 }

@@ -11,4 +11,6 @@ class Kernel extends HttpKernel
         'auth.custom' => \App\Http\Middleware\AuthCustom::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
     ];
+
+    
 }
