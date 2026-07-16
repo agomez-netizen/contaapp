@@ -10,7 +10,11 @@
   width: 44px;
   height: 24px;
 }
-.switch input { display: none; }
+
+.switch input {
+  display: none;
+}
+
 .slider {
   position: absolute;
   inset: 0;
@@ -19,6 +23,7 @@
   border-radius: 999px;
   transition: .2s;
 }
+
 .slider:before {
   content: "";
   position: absolute;
@@ -29,18 +34,45 @@
   background-color: #fff;
   border-radius: 50%;
   transition: .2s;
-  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
 }
+
 .switch input:checked + .slider {
   background-color: #0d6efd;
 }
+
 .switch input:checked + .slider:before {
   transform: translateX(20px);
 }
+
+.switch input:disabled + .slider {
+  cursor: not-allowed;
+  opacity: .55;
+  background-color: #6c757d;
+}
+
 tr.js-row:hover {
   background-color: #f8f9fa;
 }
 </style>
+
+@php
+  $usuarioSesion = session('user');
+
+  $usuarioActualId = (int) ($usuarioSesion['id_usuario'] ?? 0);
+
+  /*
+   * Usuarios autorizados para desbloquear registros.
+   * Cambia los ID si Nancy o Aníbal tienen otros valores.
+   */
+  $usuariosAutorizadosParaDesbloquear = [2, 3];
+  //$usuariosAutorizadosParaDesbloquear = [1, 2];
+  $puedeDesbloquear = in_array(
+      $usuarioActualId,
+      $usuariosAutorizadosParaDesbloquear,
+      true
+  );
+@endphp
 
 <div class="container py-3">
 
@@ -52,14 +84,22 @@ tr.js-row:hover {
     </div>
 
     <div class="d-flex gap-2">
+
       <a href="{{ route('donaciones.export.excel', request()->query()) }}"
-         class="btn btn-outline-success">📗 Exportar Excel</a>
+         class="btn btn-outline-success">
+        📗 Exportar Excel
+      </a>
 
       <a href="{{ route('donaciones.export.pdf', request()->query()) }}"
-         class="btn btn-outline-danger">📄 Exportar PDF</a>
+         class="btn btn-outline-danger">
+        📄 Exportar PDF
+      </a>
 
       <a href="{{ route('donaciones.create') }}"
-         class="btn btn-primary">✚ Nueva Donación</a>
+         class="btn btn-primary">
+        ✚ Nueva Donación
+      </a>
+
     </div>
   </div>
 
@@ -68,6 +108,7 @@ tr.js-row:hover {
     <div class="card-body table-responsive">
 
       <table class="table table-hover align-middle">
+
         <thead class="table-light">
           <tr>
             <th>#</th>
@@ -86,18 +127,46 @@ tr.js-row:hover {
         </thead>
 
         <tbody>
+
         @forelse($donaciones as $d)
+
+          @php
+            $estaBloqueado = (int) $d->bloqueado === 1;
+
+            /*
+             * Cualquier usuario puede bloquear un registro activo.
+             * Solo Nancy y Aníbal pueden desbloquear un registro bloqueado.
+             */
+            $toggleDeshabilitado =
+                $estaBloqueado && !$puedeDesbloquear;
+          @endphp
+
           <tr class="js-row"
               data-href="{{ route('donaciones.show', $d->id_donacion) }}"
               style="cursor:pointer">
 
             <td>{{ $loop->iteration }}</td>
-            <td>{{ \Carbon\Carbon::parse($d->fecha_despachada)->format('d/m/Y') }}</td>
+
+            <td>
+              {{ \Carbon\Carbon::parse($d->fecha_despachada)->format('d/m/Y') }}
+            </td>
+
             <td>{{ $d->empresa }}</td>
+
             <td>{{ $d->nit }}</td>
 
-            <td><span class="badge bg-primary">{{ $d->tipo_donacion }}</span></td>
-            <td><span class="badge bg-success">{{ $d->ubicacion }}</span></td>
+            <td>
+              <span class="badge bg-primary">
+                {{ $d->tipo_donacion }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge bg-success">
+                {{ $d->ubicacion }}
+              </span>
+            </td>
+
             <td>{{ $d->proyecto }}</td>
 
             <td class="text-end">
@@ -111,55 +180,96 @@ tr.js-row:hover {
             <td>{{ $d->usuario }}</td>
 
             {{-- TOGGLE --}}
-            <td class="text-center" onclick="event.stopPropagation();">
+            <td class="text-center"
+                onclick="event.stopPropagation();">
+
               <div class="d-flex justify-content-center align-items-center gap-2">
-                <label class="switch">
+
+                <label class="switch"
+                       title="{{ $toggleDeshabilitado
+                          ? 'Solo Nancy o Aníbal pueden desbloquear este registro'
+                          : ($estaBloqueado
+                              ? 'Desbloquear registro'
+                              : 'Bloquear registro') }}">
+
                   <input type="checkbox"
                          class="js-toggle-bloqueo"
                          data-id="{{ $d->id_donacion }}"
-                         @checked((int)$d->bloqueado === 1)>
+                         data-estado-anterior="{{ $estaBloqueado ? 1 : 0 }}"
+                         @checked($estaBloqueado)
+                         @disabled($toggleDeshabilitado)>
+
                   <span class="slider"></span>
                 </label>
+
                 <small class="text-muted">
-                  {{ (int)$d->bloqueado === 1 ? 'Bloqueado' : 'Activo' }}
+                  {{ $estaBloqueado ? 'Bloqueado' : 'Activo' }}
                 </small>
+
               </div>
             </td>
 
             {{-- ACCIONES --}}
-            <td class="text-center" onclick="event.stopPropagation();">
+            <td class="text-center"
+                onclick="event.stopPropagation();">
+
               <div class="d-flex justify-content-center gap-1">
 
                 <a href="{{ route('donaciones.pdf', $d->id_donacion) }}"
                    class="btn btn-outline-secondary btn-sm"
-                   target="_blank">📄</a>
+                   target="_blank"
+                   title="Ver PDF">
+                  📄
+                </a>
 
-                @if((int)$d->bloqueado === 0)
+                @if(!$estaBloqueado)
+
                   <a href="{{ route('donaciones.edit', $d->id_donacion) }}"
-                     class="btn btn-outline-primary btn-sm">✏️</a>
+                     class="btn btn-outline-primary btn-sm"
+                     title="Editar">
+                    ✏️
+                  </a>
 
                   <form method="POST"
                         action="{{ route('donaciones.destroy', $d->id_donacion) }}"
                         onsubmit="return confirm('¿Eliminar esta donación?');">
+
                     @csrf
                     @method('DELETE')
-                    <button class="btn btn-outline-danger btn-sm">🗑️</button>
+
+                    <button type="submit"
+                            class="btn btn-outline-danger btn-sm"
+                            title="Eliminar">
+                      🗑️
+                    </button>
+
                   </form>
+
                 @else
-                  <span class="badge bg-secondary">🔒</span>
+
+                  <span class="badge bg-secondary"
+                        title="El registro está bloqueado">
+                    🔒
+                  </span>
+
                 @endif
 
               </div>
             </td>
 
           </tr>
+
         @empty
+
           <tr>
-            <td colspan="12" class="text-center text-muted py-4">
+            <td colspan="12"
+                class="text-center text-muted py-4">
               No hay registros
             </td>
           </tr>
+
         @endforelse
+
         </tbody>
       </table>
 
@@ -169,7 +279,7 @@ tr.js-row:hover {
   </div>
 </div>
 
-{{-- JS: click en fila --}}
+{{-- CLICK EN FILA --}}
 <script>
 document.querySelectorAll('tr.js-row').forEach(row => {
   row.addEventListener('click', () => {
@@ -178,30 +288,64 @@ document.querySelectorAll('tr.js-row').forEach(row => {
 });
 </script>
 
-{{-- JS: toggle bloqueo --}}
+{{-- CAMBIAR BLOQUEO --}}
 <script>
-document.querySelectorAll('.js-toggle-bloqueo').forEach(el => {
-  el.addEventListener('change', async function () {
-    const checkbox = this;
-    const id = checkbox.dataset.id;
-    const prev = !checkbox.checked;
+document.querySelectorAll('.js-toggle-bloqueo').forEach(checkbox => {
+
+  checkbox.addEventListener('change', async function () {
+
+    const elemento = this;
+    const id = elemento.dataset.id;
+
+    /*
+     * Si estaba marcado, el estado anterior era bloqueado.
+     * Si estaba desmarcado, el estado anterior era activo.
+     */
+    const estadoAnterior = elemento.dataset.estadoAnterior === '1';
+
+    elemento.disabled = true;
 
     try {
-      const res = await fetch(`/donaciones/${id}/toggle-bloqueo`, {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': '{{ csrf_token() }}',
-          'Accept': 'application/json'
-        }
-      });
 
-      if (!res.ok) throw new Error();
-      location.reload();
-    } catch (e) {
-      checkbox.checked = prev;
-      alert('Error al cambiar el bloqueo');
+      const respuesta = await fetch(
+        `/donaciones/${id}/toggle-bloqueo`,
+        {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      let datos = {};
+
+      try {
+        datos = await respuesta.json();
+      } catch (error) {
+        datos = {};
+      }
+
+      if (!respuesta.ok) {
+        throw new Error(
+          datos.message || 'No fue posible cambiar el estado del registro.'
+        );
+      }
+
+      window.location.reload();
+
+    } catch (error) {
+
+      elemento.checked = estadoAnterior;
+      elemento.disabled = false;
+
+      alert(error.message);
+
     }
+
   });
+
 });
 </script>
 

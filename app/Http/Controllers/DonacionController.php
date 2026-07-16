@@ -312,42 +312,112 @@ class DonacionController extends Controller
         ));
     }
 
-    public function exportExcel(Request $request)
-    {
-        $rows = $this->buildExportQueryAll($request)->get();
+public function exportExcel(Request $request)
+{
+    $rows = $this->buildExportQueryAll($request)->get();
 
-        if ($rows->isEmpty()) {
-            return back()->with('error', 'No hay datos para exportar.');
-        }
-
-        $headers = array_keys((array) $rows->first());
-
-        $exportData = [];
-        $exportData[] = $headers;
-
-        foreach ($rows as $row) {
-            $exportData[] = array_values((array) $row);
-        }
-
-        $fileName = 'donaciones_completo_' . now()->format('Ymd_His') . '.xlsx';
-
-        return Excel::download(
-            new \App\Exports\ArrayExport($exportData),
-            $fileName
-        );
+    if ($rows->isEmpty()) {
+        return back()->with('error', 'No hay datos para exportar.');
     }
+
+    $headers = array_keys((array) $rows->first());
+
+    $exportData = [];
+    $exportData[] = $headers;
+
+    foreach ($rows as $row) {
+        $exportData[] = array_values((array) $row);
+    }
+
+    $totalGeneral = $rows->sum(function ($row) {
+        return (float) str_replace(
+            [',', 'Q', ' '],
+            '',
+            $row->valor_total_donacion ?? 0
+        );
+    });
+
+    $indiceValor = array_search(
+        'valor_total_donacion',
+        $headers,
+        true
+    );
+
+    $filaVacia = array_fill(0, count($headers), '');
+    $filaTotal = array_fill(0, count($headers), '');
+
+    if ($indiceValor !== false) {
+        $filaTotal[$indiceValor] = $totalGeneral;
+
+        if ($indiceValor > 0) {
+            $filaTotal[$indiceValor - 1] = 'TOTAL GENERAL';
+        } else {
+            $filaTotal[0] = $totalGeneral;
+        }
+    }
+
+    $exportData[] = $filaVacia;
+    $exportData[] = $filaTotal;
+
+    $fileName = 'donaciones_completo_' .
+        now()->format('Ymd_His') .
+        '.xlsx';
+
+    return Excel::download(
+        new \App\Exports\ArrayExport($exportData),
+        $fileName
+    );
+}
 
     public function exportPdf(Request $request)
-    {
-        $donaciones = $this->buildExportQuery($request)->get();
+{
+       //abort(500, 'CONTROLADOR ACTUALIZADO');
+    $donaciones = $this->buildExportQuery($request)->get();
 
-        $pdf = Pdf::loadView('exports.donaciones_pdf', [
-            'donaciones' => $donaciones,
-            'filtros' => $request->query(),
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download('donaciones_' . now()->format('Ymd_His') . '.pdf');
+    if ($donaciones->isEmpty()) {
+        return back()->with('error', 'No hay datos para exportar.');
     }
+
+    $totalGeneral = DB::table('donaciones as d')
+        ->when($request->filled('q'), function ($query) use ($request) {
+            $q = trim($request->q);
+
+            $query->where(function ($w) use ($q) {
+                $w->where('d.empresa', 'like', "%{$q}%")
+                  ->orWhere('d.nit', 'like', "%{$q}%")
+                  ->orWhere('d.contacto', 'like', "%{$q}%")
+                  ->orWhere('d.quien_recibe', 'like', "%{$q}%")
+                  ->orWhere('d.ref_osshp', 'like', "%{$q}%")
+                  ->orWhere('d.ref_sat', 'like', "%{$q}%");
+            });
+        })
+        ->when($request->filled('from'), function ($query) use ($request) {
+            $query->whereDate('d.fecha_despachada', '>=', $request->from);
+        })
+        ->when($request->filled('to'), function ($query) use ($request) {
+            $query->whereDate('d.fecha_despachada', '<=', $request->to);
+        })
+        ->when($request->filled('tipo'), function ($query) use ($request) {
+            $query->where('d.id_tipo_donacion', $request->tipo);
+        })
+        ->when($request->filled('proyecto'), function ($query) use ($request) {
+            $query->where('d.id_proyecto', $request->proyecto);
+        })
+        ->sum('d.valor_total_donacion');
+
+    $totalImpacto = $donaciones->sum('impacto_personas');
+
+    $pdf = Pdf::loadView('exports.donaciones_pdf', [
+        'donaciones'   => $donaciones,
+        'filtros'      => $request->query(),
+        'totalGeneral' => (float) $totalGeneral,
+        'totalImpacto' => (int) $totalImpacto,
+    ])->setPaper('a4', 'landscape');
+
+    return $pdf->download(
+        'donaciones_' . now()->format('Ymd_His') . '.pdf'
+    );
+}
 
     /**
      * Query reutilizable para export (respeta filtros del dashboard)

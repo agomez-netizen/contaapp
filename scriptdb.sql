@@ -910,3 +910,13 @@ SET
     alerta_enviada = 0,
     correo_alerta = 'agomez@amigosproobras.org'
 WHERE nombre LIKE '%TELUS%Segunda Convocatoria%';
+
+
+ALTER TABLE proyectos_organizacion
+ADD COLUMN convocatoria_id INT NULL AFTER organizacion_id,
+ADD COLUMN estado_aplicacion VARCHAR(100) DEFAULT 'Identificada' AFTER compatibilidad,
+ADD COLUMN fecha_aplicacion DATE NULL AFTER estado_aplicacion,
+ADD COLUMN monto_solicitado DECIMAL(12,2) NULL AFTER fecha_aplicacion,
+ADD COLUMN probabilidad ENUM('Alta','Media','Baja','En evaluación') DEFAULT 'En evaluación' AFTER monto_solicitado,
+ADD CONSTRAINT fk_proy_org_convocatoria
+FOREIGN KEY (convocatoria_id) REFERENCES convocatorias(id) ON DELETE CASCADE;

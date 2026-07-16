@@ -67,39 +67,260 @@
 
 
 
-    <!-- INDICADORES -->
-    <div class="row mb-4">
+<!-- INDICADORES -->
+<div class="row mb-4">
 
 
-        <div class="col-md-3">
+    <!-- TOTAL -->
+    <div class="col-md-3">
 
-            <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm h-100">
 
-                <div class="card-body">
+            <div class="card-body">
 
-                    <small class="text-muted">
-                        Total cooperantes
-                    </small>
+                <small class="text-muted">
+                    Total cooperantes
+                </small>
 
-                    <h2 class="mb-0">
-
-                        {{ $organizaciones->total() }}
-
-                    </h2>
-
-
-                </div>
+                <h2 class="mb-0">
+                    {{ $organizaciones->total() }}
+                </h2>
 
             </div>
 
         </div>
 
+    </div>
+
+
+
+    <!-- CONVOCATORIAS ACTIVAS -->
+    <div class="col-md-3">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body">
+
+                <small class="text-muted">
+                    Convocatorias Activas
+                </small>
+
+                <h2 class="mb-0 text-success">
+
+                    {{ $convocatoriasActivas ?? 0 }}
+
+                </h2>
+
+            </div>
+
+        </div>
 
     </div>
 
 
 
 
+    <!-- APLICACIONES ENVIADAS -->
+    <div class="col-md-3">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body">
+
+                <small class="text-muted">
+                    Aplicaciones Enviadas
+                </small>
+
+                <h2 class="mb-0 text-primary">
+
+                    {{ $aplicacionesEnviadas ?? 0 }}
+
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+<div class="row mb-4">
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                Cooperantes por estado
+            </div>
+
+            <div class="card-body" style="height:280px;">
+                <canvas id="graficaEstados"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                Cooperantes por prioridad
+            </div>
+
+        <div class="card-body" style="height:280px;">
+            <canvas id="graficaPrioridades"></canvas>
+        </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- FILTROS -->
+<div class="card border-0 shadow-sm mb-4">
+
+    <div class="card-header bg-white">
+
+        <strong>
+            Filtros
+        </strong>
+
+    </div>
+
+
+    <div class="card-body">
+
+
+        <form method="GET"
+              action="{{ route('cooperantes.index') }}">
+
+
+            <div class="row g-3">
+
+
+
+                <!-- BUSCAR -->
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        Buscar organización
+                    </label>
+
+                    <input type="text"
+                           name="buscar"
+                           class="form-control"
+                           placeholder="Nombre del cooperante"
+                           value="{{ request('buscar') }}">
+
+                </div>
+
+
+
+
+                <!-- PRIORIDAD -->
+                <div class="col-md-3">
+
+                    <label class="form-label">
+                        Prioridad
+                    </label>
+
+
+                    <select name="prioridad"
+                            class="form-select">
+
+                        <option value="">
+                            Todas
+                        </option>
+
+
+                        <option value="Alta"
+                        {{ request('prioridad')=='Alta'?'selected':'' }}>
+                            Alta
+                        </option>
+
+
+                        <option value="Media"
+                        {{ request('prioridad')=='Media'?'selected':'' }}>
+                            Media
+                        </option>
+
+
+                        <option value="Baja"
+                        {{ request('prioridad')=='Baja'?'selected':'' }}>
+                            Baja
+                        </option>
+
+
+                    </select>
+
+
+                </div>
+
+
+
+
+                <!-- ESTADO -->
+                <div class="col-md-3">
+
+                    <label class="form-label">
+                        Estado
+                    </label>
+
+
+                    <select name="estado"
+                            class="form-select">
+
+                        <option value="">
+                            Todos
+                        </option>
+
+
+                        <option value="Identificada"
+                        {{ request('estado')=='Identificada'?'selected':'' }}>
+
+                            Identificada
+
+                        </option>
+
+
+                        <option value="Aplicada"
+                        {{ request('estado')=='Aplicada'?'selected':'' }}>
+
+                            Aplicada
+
+                        </option>
+
+
+                    </select>
+
+                </div>
+
+
+
+
+                <!-- BOTON -->
+                <div class="col-md-2 d-flex align-items-end">
+
+                    <button class="btn btn-primary w-100">
+
+                        <i class="bi bi-search"></i>
+
+                        Filtrar
+
+                    </button>
+
+                </div>
+
+
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+</div>
 
     <!-- TABLA -->
     <div class="card border-0 shadow-sm">
@@ -376,5 +597,61 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+const estadosLabels = @json(($cooperantesPorEstado ?? collect())->keys()->values());
+const estadosValores = @json(($cooperantesPorEstado ?? collect())->values());
+
+new Chart(document.getElementById('graficaEstados'), {
+    type: 'doughnut',
+    data: {
+        labels: estadosLabels,
+        datasets: [{
+            data: estadosValores
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+const prioridadLabels = @json(($cooperantesPorPrioridad ?? collect())->keys()->values());
+const prioridadValores = @json(($cooperantesPorPrioridad ?? collect())->values());
+
+new Chart(document.getElementById('graficaPrioridades'), {
+    type: 'bar',
+    data: {
+        labels: prioridadLabels,
+        datasets: [{
+            label: 'Cooperantes',
+            data: prioridadValores
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    }
+});
+
+});
+</script>
 
 @endsection

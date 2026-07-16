@@ -18,8 +18,8 @@ use App\Http\Controllers\CalidadVidaController;
 use App\Http\Controllers\AvanceController;
 use App\Http\Controllers\ProyectoUsuarioController;
 use App\Http\Controllers\SubproyectoController;
-use App\Http\Controllers\DocumentoAntiguaController;
-use App\Http\Controllers\DocumentoZona14Controller;
+//use App\Http\Controllers\DocumentoAntiguaController;
+//use App\Http\Controllers\DocumentoZona14Controller;
 use App\Http\Controllers\OficinaAntiguaController;
 use App\Http\Controllers\RubroController;
 use App\Http\Controllers\ContactoController;
@@ -65,11 +65,12 @@ Route::middleware(['auth.custom'])->group(function () {
 
         Route::get('/donaciones/{id}', [DonacionController::class, 'show'])->name('donaciones.show');
 
-        Route::get('/donaciones/export/excel', [DashboardController::class, 'exportExcel'])
+        Route::get('/donaciones/export/excel', [DonacionController::class, 'exportExcel'])
             ->name('donaciones.export.excel');
 
-        Route::get('/donaciones/export/pdf', [DashboardController::class, 'exportPdf'])
+        Route::get('/donaciones/export/pdf', [DonacionController::class, 'exportPdf'])
             ->name('donaciones.export.pdf');
+
 
         Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
 
@@ -89,7 +90,7 @@ Route::middleware(['auth.custom'])->group(function () {
            Route::get('/proyectos/export', [ProyectoController::class, 'exportExcel'])
         ->name('proyectos.export');
 
-    Route::resource('proyectos', ProyectoController::class);
+        Route::resource('proyectos', ProyectoController::class);
 
 
         Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
@@ -121,11 +122,11 @@ Route::middleware(['auth.custom'])->group(function () {
         Route::put('/asignaciones/proyectos-usuarios/{id_usuario}', [ProyectoUsuarioController::class, 'update'])
             ->name('asignaciones.proyectos_usuarios.update');
 
-        Route::get('/donaciones/export/excel', [DashboardController::class, 'exportExcel'])
-            ->name('donaciones.export.excel');
+        //Route::get('/donaciones/export/excel', [DashboardController::class, 'exportExcel'])
+        //    ->name('donaciones.export.excel');
 
-        Route::get('/donaciones/export/pdf', [DashboardController::class, 'exportPdf'])
-            ->name('donaciones.export.pdf');
+        //Route::get('/donaciones/export/pdf', [DashboardController::class, 'exportPdf'])
+        //    ->name('donaciones.export.pdf');
 
         Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
 
@@ -140,6 +141,11 @@ Route::middleware(['auth.custom'])->group(function () {
 Route::resource('cooperantes', CooperantesController::class);
 Route::get('/cooperantes-exportar', [CooperantesController::class, 'exportarExcel'])
     ->name('cooperantes.exportar');
+
+Route::get(
+    '/cooperantes/{id}/ficha-pdf',
+    [CooperantesController::class, 'exportarFichaPdf']
+)->name('cooperantes.ficha.pdf');
 
     });
 
@@ -259,11 +265,11 @@ Route::resource('subproyectos', SubproyectoController::class);
     // =========================
     // OFICINA
     // =========================
-    Route::get('/oficina/antigua', [DocumentoAntiguaController::class, 'index'])
-        ->name('oficina.antigua.index');
+    //Route::get('/oficina/antigua', [DocumentoAntiguaController::class, 'index'])
+      //  ->name('oficina.antigua.index');
 
-    Route::get('/oficina/rambla', [DocumentoZona14Controller::class, 'index'])
-        ->name('oficina.rambla.index');
+   // Route::get('/oficina/rambla', [DocumentoZona14Controller::class, 'index'])
+     //   ->name('oficina.rambla.index');
 
     Route::get('/', [OficinaAntiguaController::class, 'index'])->name('oficina.antigua.index');
 

@@ -27,4 +27,9 @@ class Convocatoria extends Model
         'fecha_alerta_enviada',
         'correo_alerta'
     ];
+
+    public function proyectosOrganizacion()
+    {
+        return $this->hasMany(ProyectoOrganizacion::class, 'convocatoria_id');
+    }
 }

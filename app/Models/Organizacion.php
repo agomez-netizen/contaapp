@@ -44,7 +44,22 @@ class Organizacion extends Model
     }
 
     public function convocatorias()
-{
-    return $this->hasMany(Convocatoria::class, 'organizacion_id');
-}
+    {
+        return $this->hasMany(Convocatoria::class, 'organizacion_id');
+    }
+
+        public function proyectosOrganizacion()
+    {
+        return $this->hasMany(ProyectoOrganizacion::class, 'organizacion_id');
+    }
+
+    public function seguimientos()
+    {
+        return $this->hasMany(Seguimiento::class, 'organizacion_id');
+    }
+
+    public function documentosRequeridos()
+    {
+        return $this->hasMany(DocumentoRequerido::class, 'organizacion_id');
+    }
 }

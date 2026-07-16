@@ -8,19 +8,64 @@ use App\Models\TelefonoOrganizacion;
 use App\Models\WebOrganizacion;
 use App\Models\RedOrganizacion;
 use App\Models\Convocatoria;
+use App\Models\ProyectoAapos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ArrayExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CooperantesController extends Controller
 {
-    public function index()
-    {
-        $organizaciones = Organizacion::orderBy('id', 'desc')->paginate(15);
+public function index(Request $request)
+{
+    $query = Organizacion::query();
 
-        return view('cooperantes.index', compact('organizaciones'));
+    if ($request->filled('buscar')) {
+        $query->where('nombre', 'LIKE', '%' . $request->buscar . '%');
     }
+
+    if ($request->filled('prioridad')) {
+        $query->where('prioridad', $request->prioridad);
+    }
+
+    if ($request->filled('estado')) {
+        $query->where('estado', $request->estado);
+    }
+
+    $organizaciones = $query
+        ->orderByDesc('id')
+        ->paginate(15)
+        ->withQueryString();
+
+    $convocatoriasActivas = Convocatoria::where('estado', 'Activa')
+        ->count();
+
+    $aplicacionesEnviadas = Organizacion::where('estado', 'Aplicado')
+        ->count();
+
+    $cooperantesPorEstado = Organizacion::select(
+            'estado',
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy('estado')
+        ->pluck('total', 'estado');
+
+    $cooperantesPorPrioridad = Organizacion::select(
+            'prioridad',
+            DB::raw('COUNT(*) as total')
+        )
+        ->groupBy('prioridad')
+        ->pluck('total', 'prioridad');
+
+    return view('cooperantes.index', compact(
+        'organizaciones',
+        'convocatoriasActivas',
+        'aplicacionesEnviadas',
+        'cooperantesPorEstado',
+        'cooperantesPorPrioridad'
+    ));
+}
 
     public function create()
     {
@@ -30,11 +75,11 @@ class CooperantesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => ['required', 'string', 'max:255'],
+            'correo_general' => ['nullable', 'email', 'max:150'],
         ]);
 
         DB::transaction(function () use ($request) {
-
             $organizacion = Organizacion::create([
                 'nombre' => $request->nombre,
                 'tipo_organizacion' => $request->tipo_organizacion,
@@ -69,10 +114,39 @@ class CooperantesController extends Controller
             'telefonos',
             'webs',
             'redes',
-            'convocatorias'
+            'convocatorias.proyectosOrganizacion.proyecto',
+            'proyectosOrganizacion.proyecto',
+            'proyectosOrganizacion.convocatoria',
+            'seguimientos',
+            'documentosRequeridos',
         ])->findOrFail($id);
 
         return view('cooperantes.show', compact('organizacion'));
+    }
+
+    public function exportarFichaPdf($id)
+    {
+        $organizacion = Organizacion::with([
+            'contactos',
+            'telefonos',
+            'webs',
+            'redes',
+            'convocatorias.proyectosOrganizacion.proyecto',
+            'proyectosOrganizacion.proyecto',
+            'proyectosOrganizacion.convocatoria',
+            'seguimientos',
+            'documentosRequeridos',
+        ])->findOrFail($id);
+
+        $nombreArchivo = 'ficha_tecnica_' . str($organizacion->nombre)
+            ->slug('_') . '.pdf';
+
+        $pdf = Pdf::loadView(
+            'cooperantes.ficha_pdf',
+            compact('organizacion')
+        )->setPaper('a4', 'portrait');
+
+        return $pdf->download($nombreArchivo);
     }
 
     public function edit($id)
@@ -82,20 +156,29 @@ class CooperantesController extends Controller
             'telefonos',
             'webs',
             'redes',
-            'convocatorias'
+            'convocatorias.proyectosOrganizacion.proyecto',
+            'proyectosOrganizacion.proyecto',
+            'proyectosOrganizacion.convocatoria',
+            'seguimientos',
+            'documentosRequeridos',
         ])->findOrFail($id);
 
-        return view('cooperantes.edit', compact('organizacion'));
+        $proyectosAapos = ProyectoAapos::orderBy('nombre')->get();
+
+        return view('cooperantes.edit', compact(
+            'organizacion',
+            'proyectosAapos'
+        ));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => ['required', 'string', 'max:255'],
+            'correo_general' => ['nullable', 'email', 'max:150'],
         ]);
 
         DB::transaction(function () use ($request, $id) {
-
             $organizacion = Organizacion::findOrFail($id);
 
             $organizacion->update([
@@ -127,7 +210,7 @@ class CooperantesController extends Controller
         });
 
         return redirect()
-            ->route('cooperantes.index')
+            ->route('cooperantes.show', $id)
             ->with('success', 'Cooperante actualizado correctamente.');
     }
 
@@ -141,13 +224,16 @@ class CooperantesController extends Controller
             ->with('success', 'Cooperante eliminado correctamente.');
     }
 
-    private function guardarConvocatoria(Request $request, Organizacion $organizacion, bool $esUpdate = false)
-    {
-        if (!$request->has('convocatoria')) {
+    private function guardarConvocatoria(
+        Request $request,
+        Organizacion $organizacion,
+        bool $esUpdate = false
+    ): void {
+        $conv = $request->input('convocatoria');
+
+        if (!is_array($conv)) {
             return;
         }
-
-        $conv = $request->convocatoria;
 
         if (empty($conv['nombre']) && empty($conv['fecha_cierre'])) {
             return;
@@ -156,17 +242,17 @@ class CooperantesController extends Controller
         $data = [
             'nombre' => $conv['nombre'] ?? null,
             'tipo_apoyo' => $conv['tipo_apoyo'] ?? null,
-            'fecha_apertura' => $conv['fecha_apertura'] ?? null,
-            'fecha_cierre' => $conv['fecha_cierre'] ?? null,
-            'monto_minimo' => $conv['monto_minimo'] ?? null,
-            'monto_maximo' => $conv['monto_maximo'] ?? null,
+            'fecha_apertura' => $conv['fecha_apertura'] ?: null,
+            'fecha_cierre' => $conv['fecha_cierre'] ?: null,
+            'monto_minimo' => $conv['monto_minimo'] ?: null,
+            'monto_maximo' => $conv['monto_maximo'] ?: null,
             'moneda' => $conv['moneda'] ?? 'USD',
             'periodicidad' => $conv['periodicidad'] ?? null,
             'areas_prioritarias' => $conv['areas_prioritarias'] ?? null,
             'requisitos_clave' => $conv['requisitos_clave'] ?? null,
             'enlace' => $conv['enlace'] ?? null,
             'estado' => $conv['estado'] ?? 'Pendiente',
-            'alerta_7_dias' => $conv['alerta_7_dias'] ?? 1,
+            'alerta_7_dias' => (int) ($conv['alerta_7_dias'] ?? 1),
             'correo_alerta' => $conv['correo_alerta'] ?? null,
         ];
 
@@ -174,95 +260,100 @@ class CooperantesController extends Controller
             $data['alerta_enviada'] = 0;
             $data['fecha_alerta_enviada'] = null;
 
-            Convocatoria::updateOrCreate(
-                ['organizacion_id' => $organizacion->id],
-                $data
-            );
-        } else {
-            $data['organizacion_id'] = $organizacion->id;
+            $convocatoriaExistente = $organizacion->convocatorias()
+                ->orderBy('id')
+                ->first();
 
-            Convocatoria::create($data);
-        }
-    }
+            if ($convocatoriaExistente) {
+                $convocatoriaExistente->update($data);
+            } else {
+                $organizacion->convocatorias()->create($data);
+            }
 
-    private function guardarContactos(Request $request, Organizacion $organizacion)
-    {
-        if (!$request->has('contactos')) {
             return;
         }
 
-        foreach ($request->contactos as $contacto) {
-            if (!empty($contacto['nombre'])) {
-                ContactoOrganizacion::create([
-                    'organizacion_id' => $organizacion->id,
-                    'nombre' => $contacto['nombre'],
-                    'cargo' => $contacto['cargo'] ?? null,
-                    'correo' => $contacto['correo'] ?? null,
-                    'telefono' => $contacto['telefono'] ?? null,
-                    'whatsapp' => $contacto['whatsapp'] ?? null,
-                    'idioma' => $contacto['idioma'] ?? null,
-                    'medio_preferido' => $contacto['medio_preferido'] ?? null,
-                    'notas' => $contacto['notas'] ?? null,
-                ]);
+        $organizacion->convocatorias()->create($data);
+    }
+
+    private function guardarContactos(
+        Request $request,
+        Organizacion $organizacion
+    ): void {
+        foreach ($request->input('contactos', []) as $contacto) {
+            if (empty($contacto['nombre'])) {
+                continue;
             }
+
+            ContactoOrganizacion::create([
+                'organizacion_id' => $organizacion->id,
+                'nombre' => $contacto['nombre'],
+                'cargo' => $contacto['cargo'] ?? null,
+                'correo' => $contacto['correo'] ?? null,
+                'telefono' => $contacto['telefono'] ?? null,
+                'whatsapp' => $contacto['whatsapp'] ?? null,
+                'idioma' => $contacto['idioma'] ?? null,
+                'medio_preferido' => $contacto['medio_preferido'] ?? null,
+                'notas' => $contacto['notas'] ?? null,
+            ]);
         }
     }
 
-    private function guardarTelefonos(Request $request, Organizacion $organizacion)
-    {
-        if (!$request->has('telefonos')) {
-            return;
-        }
-
-        foreach ($request->telefonos as $telefono) {
-            if (!empty($telefono['numero'])) {
-                TelefonoOrganizacion::create([
-                    'organizacion_id' => $organizacion->id,
-                    'tipo' => $telefono['tipo'] ?? null,
-                    'numero' => $telefono['numero'],
-                    'extension' => $telefono['extension'] ?? null,
-                    'pais' => $telefono['pais'] ?? null,
-                    'observaciones' => $telefono['observaciones'] ?? null,
-                ]);
+    private function guardarTelefonos(
+        Request $request,
+        Organizacion $organizacion
+    ): void {
+        foreach ($request->input('telefonos', []) as $telefono) {
+            if (empty($telefono['numero'])) {
+                continue;
             }
+
+            TelefonoOrganizacion::create([
+                'organizacion_id' => $organizacion->id,
+                'tipo' => $telefono['tipo'] ?? null,
+                'numero' => $telefono['numero'],
+                'extension' => $telefono['extension'] ?? null,
+                'pais' => $telefono['pais'] ?? null,
+                'observaciones' => $telefono['observaciones'] ?? null,
+            ]);
         }
     }
 
-    private function guardarWebs(Request $request, Organizacion $organizacion)
-    {
-        if (!$request->has('webs')) {
-            return;
-        }
-
-        foreach ($request->webs as $web) {
-            if (!empty($web['url'])) {
-                WebOrganizacion::create([
-                    'organizacion_id' => $organizacion->id,
-                    'tipo' => $web['tipo'] ?? 'Sitio web',
-                    'url' => $web['url'],
-                    'descripcion' => $web['descripcion'] ?? null,
-                    'activo' => isset($web['activo']) ? 1 : 0,
-                ]);
+    private function guardarWebs(
+        Request $request,
+        Organizacion $organizacion
+    ): void {
+        foreach ($request->input('webs', []) as $web) {
+            if (empty($web['url'])) {
+                continue;
             }
+
+            WebOrganizacion::create([
+                'organizacion_id' => $organizacion->id,
+                'tipo' => $web['tipo'] ?? 'Sitio web',
+                'url' => $web['url'],
+                'descripcion' => $web['descripcion'] ?? null,
+                'activo' => isset($web['activo']) ? 1 : 0,
+            ]);
         }
     }
 
-    private function guardarRedes(Request $request, Organizacion $organizacion)
-    {
-        if (!$request->has('redes')) {
-            return;
-        }
-
-        foreach ($request->redes as $red) {
-            if (!empty($red['url']) || !empty($red['usuario'])) {
-                RedOrganizacion::create([
-                    'organizacion_id' => $organizacion->id,
-                    'red_social' => $red['red_social'] ?? null,
-                    'url' => $red['url'] ?? null,
-                    'usuario' => $red['usuario'] ?? null,
-                    'notas' => $red['notas'] ?? null,
-                ]);
+    private function guardarRedes(
+        Request $request,
+        Organizacion $organizacion
+    ): void {
+        foreach ($request->input('redes', []) as $red) {
+            if (empty($red['url']) && empty($red['usuario'])) {
+                continue;
             }
+
+            RedOrganizacion::create([
+                'organizacion_id' => $organizacion->id,
+                'red_social' => $red['red_social'] ?? null,
+                'url' => $red['url'] ?? null,
+                'usuario' => $red['usuario'] ?? null,
+                'notas' => $red['notas'] ?? null,
+            ]);
         }
     }
 
@@ -273,12 +364,10 @@ class CooperantesController extends Controller
             'telefonos',
             'webs',
             'redes',
-            'convocatorias'
-        ])->orderBy('id', 'desc')->get();
+            'convocatorias',
+        ])->orderByDesc('id')->get();
 
-        $data = [];
-
-        $data[] = [
+        $data = [[
             'ID',
             'Organización',
             'Tipo',
@@ -295,21 +384,34 @@ class CooperantesController extends Controller
             'Teléfonos',
             'Sitios web',
             'Redes sociales',
-            'Descripción'
-        ];
+            'Descripción',
+        ]];
 
         foreach ($organizaciones as $org) {
-
             $convocatorias = $org->convocatorias->map(function ($c) {
-                return trim($c->nombre . ' | Cierre: ' . $c->fecha_cierre . ' | ' . $c->moneda . ' ' . $c->monto_maximo . ' | Estado: ' . $c->estado);
+                return trim(
+                    $c->nombre
+                    . ' | Cierre: ' . ($c->fecha_cierre ?? 'Sin fecha')
+                    . ' | ' . $c->moneda . ' ' . ($c->monto_maximo ?? '')
+                    . ' | Estado: ' . $c->estado
+                );
             })->implode("\n");
 
             $contactos = $org->contactos->map(function ($c) {
-                return trim($c->nombre . ' | ' . $c->cargo . ' | ' . $c->correo . ' | ' . $c->whatsapp);
+                return trim(
+                    $c->nombre . ' | '
+                    . $c->cargo . ' | '
+                    . $c->correo . ' | '
+                    . $c->whatsapp
+                );
             })->implode("\n");
 
             $telefonos = $org->telefonos->map(function ($t) {
-                return trim($t->tipo . ' | ' . $t->numero . ' | Ext: ' . $t->extension);
+                return trim(
+                    $t->tipo . ' | '
+                    . $t->numero . ' | Ext: '
+                    . $t->extension
+                );
             })->implode("\n");
 
             $webs = $org->webs->map(function ($w) {
@@ -317,7 +419,11 @@ class CooperantesController extends Controller
             })->implode("\n");
 
             $redes = $org->redes->map(function ($r) {
-                return trim($r->red_social . ' | ' . $r->usuario . ' | ' . $r->url);
+                return trim(
+                    $r->red_social . ' | '
+                    . $r->usuario . ' | '
+                    . $r->url
+                );
             })->implode("\n");
 
             $data[] = [
@@ -337,7 +443,7 @@ class CooperantesController extends Controller
                 $telefonos,
                 $webs,
                 $redes,
-                $org->descripcion
+                $org->descripcion,
             ];
         }
 
