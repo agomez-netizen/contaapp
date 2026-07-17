@@ -69,6 +69,43 @@
             text-align: right;
             font-weight: bold;
         }
+
+         @page {
+        margin: 18px 20px;
+    }
+
+    body {
+        font-family: DejaVu Sans, sans-serif;
+        font-size: 8px;
+        color: #111827;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    th {
+        background-color: #eeeeee;
+        font-weight: bold;
+        text-align: left;
+        padding: 5px 4px;
+        border: 1px solid #d1d5db;
+        vertical-align: middle;
+    }
+
+    td {
+        padding: 4px;
+        border: 1px solid #d1d5db;
+        vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    tr {
+        page-break-inside: avoid;
+    }
     </style>
 </head>
 
@@ -78,82 +115,74 @@
 
     <div class="muted">
         Generado: {{ now()->format('d/m/Y H:i') }}
+
     </div>
 
     <table>
-        <thead>
+    <thead>
+        <tr>
+            <th style="width: 7%;">Fecha</th>
+            <th style="width: 13%;">Empresa</th>
+            <th style="width: 7%;">NIT</th>
+            <th style="width: 8%;">Tipo</th>
+            <th style="width: 18%;">Descripción</th>
+            <th style="width: 7%;">Ubicación</th>
+            <th style="width: 10%;">Proyecto</th>
+            <th style="width: 8%; text-align: right;">Valor</th>
+            <th style="width: 6%; text-align: right;">Impacto</th>
+
+            <th style="width: 8%;">Persona gestionó</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach($donaciones as $donacion)
             <tr>
-                <th>ID</th>
-                <th>Fecha</th>
-                <th>Empresa</th>
-                <th>NIT</th>
-                <th>Tipo</th>
-                <th>Ubicación</th>
-                <th>Proyecto</th>
-                <th class="right">Valor</th>
-                <th class="right">Impacto</th>
-                <th>Registró</th>
+                <td>
+                    {{ \Carbon\Carbon::parse($donacion->fecha_despachada)->format('d/m/Y') }}
+                </td>
+
+                <td>
+                    {{ $donacion->empresa ?? '-' }}
+                </td>
+
+                <td>
+                    {{ $donacion->nit ?? '-' }}
+                </td>
+
+                <td>
+                    {{ $donacion->tipo_donacion ?? '-' }}
+                </td>
+
+                <td>
+                    {{ $donacion->descripcion ?? '-' }}
+                </td>
+
+                <td>
+                    {{ $donacion->ubicacion ?? '-' }}
+                </td>
+
+                <td>
+                    {{ $donacion->proyecto ?? '-' }}
+                </td>
+
+                <td style="text-align: right; white-space: nowrap;">
+                    Q{{ number_format((float) $donacion->valor_total_donacion, 2) }}
+                </td>
+
+                <td style="text-align: right;">
+                    {{ number_format((int) ($donacion->impacto_personas ?? 0)) }}
+                </td>
+
+               
+
+                <td>
+                    {{ $donacion->persona_gestiono ?? '-' }}
+                </td>
             </tr>
-        </thead>
-
-        <tbody>
-            @forelse($donaciones as $d)
-                <tr>
-                    <td>{{ $d->id_donacion }}</td>
-
-                    <td>
-                        {{ $d->fecha_despachada
-                            ? \Carbon\Carbon::parse($d->fecha_despachada)->format('d/m/Y')
-                            : '-' }}
-                    </td>
-
-                    <td>{{ $d->empresa ?: '-' }}</td>
-
-                    <td>{{ $d->nit ?: '-' }}</td>
-
-                    <td>{{ $d->tipo_donacion ?: '-' }}</td>
-
-                    <td>{{ $d->ubicacion ?: '-' }}</td>
-
-                    <td>{{ $d->proyecto ?: '-' }}</td>
-
-                    <td class="right">
-                        Q{{ number_format((float) ($d->valor_total_donacion ?? 0), 2) }}
-                    </td>
-
-                    <td class="right">
-                        {{ number_format((int) ($d->impacto_personas ?? 0)) }}
-                    </td>
-
-                    <td>{{ $d->usuario ?: '-' }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="10" class="center">
-                        No hay registros para mostrar.
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-
-        <tfoot>
-            <tr class="total-row">
-                <td colspan="7" class="right">
-                    TOTAL GENERAL
-                </td>
-
-                <td class="right">
-                    Q{{ number_format((float) ($totalGeneral ?? 0), 2) }}
-                </td>
-
-                <td class="right">
-                    {{ number_format((int) ($totalImpacto ?? 0)) }}
-                </td>
-
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
+        @endforeach
+    </tbody>
+</table>
 
     <table class="summary-table">
         <tr>

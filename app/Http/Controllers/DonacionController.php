@@ -462,8 +462,10 @@ public function exportExcel(Request $request)
             'ub.nombre as ubicacion',
             'td.nombre as tipo_donacion',
             'p.nombre as proyecto',
+           // DB::raw("CONCAT(u.nombre,' ',u.apellido) as usuario"),
+            'd.persona_gestiono',
             'd.impacto_personas',
-            DB::raw("CONCAT(u.nombre,' ',u.apellido) as usuario")
+            'd.descripcion'
         )->orderByDesc('d.id_donacion');
     }
 
