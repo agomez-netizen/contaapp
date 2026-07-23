@@ -142,7 +142,7 @@ class DashboardController extends Controller
             'avancesPorProyecto',
             'resumenTipos',
             'totalGeneralTipos',
-            
+
 
 
         ));
@@ -334,4 +334,104 @@ class DashboardController extends Controller
             'points' => $points,
         ]);
     }
+
+
+    public function exportResumenPdf(Request $request)
+{
+    $q        = trim($request->get('q', ''));
+    $from     = $request->get('from');
+    $to       = $request->get('to');
+    $tipo     = $request->get('tipo');
+    $proyecto = $request->get('proyecto');
+
+    $base = DB::table('donaciones as d')
+        ->leftJoin(
+            'tipos_donacion as td',
+            'td.id_tipo_donacion',
+            '=',
+            'd.id_tipo_donacion'
+        )
+        ->leftJoin(
+            'proyectos as p',
+            'p.id_proyecto',
+            '=',
+            'd.id_proyecto'
+        );
+
+    if ($q !== '') {
+        $base->where(function ($consulta) use ($q) {
+            $consulta
+                ->where('d.empresa', 'like', "%{$q}%")
+                ->orWhere('d.nit', 'like', "%{$q}%")
+                ->orWhere('d.contacto', 'like', "%{$q}%")
+                ->orWhere('d.quien_recibe', 'like', "%{$q}%")
+                ->orWhere('d.ref_osshp', 'like', "%{$q}%")
+                ->orWhere('d.ref_sat', 'like', "%{$q}%");
+        });
+    }
+
+    if ($from) {
+        $base->whereDate('d.fecha_despachada', '>=', $from);
+    }
+
+    if ($to) {
+        $base->whereDate('d.fecha_despachada', '<=', $to);
+    }
+
+    if ($tipo) {
+        $base->where('d.id_tipo_donacion', $tipo);
+    }
+
+    if ($proyecto) {
+        $base->where('d.id_proyecto', $proyecto);
+    }
+
+    $stats = (clone $base)
+        ->selectRaw('
+            COUNT(DISTINCT d.id_donacion) AS total_donaciones,
+            COALESCE(
+                SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))),
+                0
+            ) AS total_dinero,
+            COALESCE(
+                SUM(CAST(d.impacto_personas AS UNSIGNED)),
+                0
+            ) AS total_impacto
+        ')
+        ->first();
+
+    $resumenTipos = (clone $base)
+        ->whereNotNull('td.nombre')
+        ->whereNotNull('d.valor_total_donacion')
+        ->whereRaw(
+            'CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0'
+        )
+        ->groupBy('d.id_tipo_donacion', 'td.nombre')
+        ->selectRaw('
+            td.nombre AS tipo,
+            COALESCE(
+                SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))),
+                0
+            ) AS total
+        ')
+        ->orderByDesc('total')
+        ->get();
+
+    $totalGeneralTipos = $resumenTipos->sum('total');
+
+    $pdf = Pdf::loadView('exports.dashboard_resumen_pdf', [
+        'stats'               => $stats,
+        'resumenTipos'        => $resumenTipos,
+        'totalGeneralTipos'   => $totalGeneralTipos,
+        'graficaTipo'         => $request->input('grafica_tipo'),
+        'graficaProyecto'     => $request->input('grafica_proyecto'),
+        'graficaAvances'      => $request->input('grafica_avances'),
+        'from'                => $from,
+        'to'                  => $to,
+    ])->setPaper('a4', 'landscape');
+
+    return $pdf->download(
+        'resumen_donaciones_' . now()->format('Ymd_His') . '.pdf'
+    );
+}
 }

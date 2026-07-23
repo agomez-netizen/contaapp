@@ -38,8 +38,8 @@
   $canAvances    = $isAdmin || $isGestor || $isSecretaria || $isProyectos || $isComunicador;;
   $canMetricas   = $isAdmin || $isGestor || $isDirector && !$isComunicador;
 
-  // Oficina (si quieres limitarlo por rol, aquí lo haces)
-  $canOficina    = $isAdmin || $isGestor ||  $isOperador || $isSecretaria  || $isProyectos && !$isComunicador;; // ajustable
+  // Oficina (si quieres limitarlo por rol, aquí lo haces) ||  $isOperador
+  $canOficina    = $isAdmin || $isGestor  || $isSecretaria  || $isProyectos && !$isComunicador;; // ajustable
 
   // Mantenimientos
   $canMaint      = $isAdmin || $isGestor && !$isComunicador;;

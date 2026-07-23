@@ -35,6 +35,7 @@
             <label class="form-label">Fecha despachada</label>
             <input type="date" name="fecha_despachada" class="form-control"
                    value="{{ old('fecha_despachada', $donacion->fecha_despachada) }}">
+
           </div>
 
           <div class="col-md-3">

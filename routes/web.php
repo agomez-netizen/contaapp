@@ -49,6 +49,10 @@ Route::middleware(['auth.custom'])->group(function () {
     Route::get('/dashboard/scatter', [DashboardController::class, 'scatter'])
         ->name('dashboard.scatter');
 
+    Route::post(
+        '/dashboard/exportar-resumen-pdf',
+        [DashboardController::class, 'exportResumenPdf']
+    )->name('dashboard.export.resumen.pdf');
 
     // =========================
     // DONACIONES (ADMIN + GESTOR + DONACIONES)

@@ -10,9 +10,6 @@
   $proyectos = $proyectos ?? collect();
   $porTipo = $porTipo ?? collect();
   $porProyecto = $porProyecto ?? collect();
-  $avancesPorProyecto = $avancesPorProyecto ?? collect();
-  $resumenTipos = $resumenTipos ?? collect();
-  $totalGeneralTipos = $totalGeneralTipos ?? 0;
 
   $stats = $stats ?? (object)[
     'total_donaciones' => 0,
@@ -26,41 +23,6 @@
   $tipo = $tipo ?? '';
   $proyecto = $proyecto ?? '';
 @endphp
-
-
-<style>
-.chart-html-legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px 14px;
-  margin-top: 12px;
-  min-height: 42px;
-}
-
-.chart-html-legend .legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: #495057;
-  line-height: 1.2;
-  cursor: pointer;
-  user-select: none;
-}
-
-.chart-html-legend .legend-item.is-hidden {
-  opacity: .45;
-  text-decoration: line-through;
-}
-
-.chart-html-legend .legend-color {
-  width: 20px;
-  height: 9px;
-  border-radius: 2px;
-  flex: 0 0 auto;
-}
-</style>
 
 <div class="container py-4">
 
@@ -287,11 +249,9 @@
           <h6 class="fw-semibold mb-3">💝 Donaciones por Tipo</h6>
 
           {{-- contenedor con alto controlado --}}
-          <div style="height: 270px;">
+          <div style="height: 280px;">
             <canvas id="chartTipo"></canvas>
           </div>
-
-          <div id="legendTipo" class="chart-html-legend"></div>
 
           <div id="chartTipoEmpty" class="text-muted small mt-2 d-none">
             Sin datos para graficar con los filtros actuales.
@@ -305,11 +265,9 @@
         <div class="card-body">
           <h6 class="fw-semibold mb-3">📌 Donaciones por Proyecto</h6>
 
-          <div style="height: 270px;">
+          <div style="height: 280px;">
             <canvas id="chartProyecto"></canvas>
           </div>
-
-          <div id="legendProyecto" class="chart-html-legend"></div>
 
           <div id="chartProyectoEmpty" class="text-muted small mt-2 d-none">
             Sin datos para graficar con los filtros actuales.
@@ -325,30 +283,7 @@
 ============================ --}}
 <div class="card shadow-sm mb-4">
   <div class="card-body">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-      <h5 class="fw-bold mb-0">📊 Resumen por Tipo de Donación</h5>
-
-      <form id="formExportarResumen"
-            method="POST"
-            action="{{ route('dashboard.export.resumen.pdf') }}">
-        @csrf
-
-        <input type="hidden" name="q" value="{{ $q }}">
-        <input type="hidden" name="from" value="{{ $from }}">
-        <input type="hidden" name="to" value="{{ $to }}">
-        <input type="hidden" name="tipo" value="{{ $tipo }}">
-        <input type="hidden" name="proyecto" value="{{ $proyecto }}">
-
-        <input type="hidden" name="grafica_tipo" id="graficaTipoImagen">
-        <input type="hidden" name="grafica_proyecto" id="graficaProyectoImagen">
-        <input type="hidden" name="grafica_avances" id="graficaAvancesImagen">
-
-        <button type="submit" class="btn btn-outline-danger">
-          <i class="bi bi-file-earmark-pdf me-1"></i>
-          Exportar resumen
-        </button>
-      </form>
-    </div>
+    <h5 class="fw-bold mb-3">📊 Resumen por Tipo de Donación</h5>
 
     <div class="table-responsive">
       <table class="table table-sm align-middle">
@@ -424,179 +359,85 @@
 {{-- ===== SCRIPTS ===== --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-const porTipoData = @json($porTipo);
-const porProyectoData = @json($porProyecto);
+  const porTipoData = @json($porTipo);
+  const porProyectoData = @json($porProyecto);
+
+  function makeDoughnut(canvasId, emptyId, rows) {
+    const el = document.getElementById(canvasId);
+    const emptyEl = document.getElementById(emptyId);
+    if (!el) return;
+
+    const labels = (rows || []).map(r => r.label ?? 'Sin nombre');
+    const values = (rows || []).map(r => Number(r.total ?? 0));
+
+    const total = values.reduce((a,b)=>a+b,0);
+    if (!labels.length || total <= 0) {
+      if (emptyEl) emptyEl.classList.remove('d-none');
+      return;
+    }
+
+    new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: values }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const sum = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                const value = Number(ctx.raw ?? 0);
+
+                // Blindaje anti-NaN
+                if (!sum || !isFinite(sum)) {
+                  return `Q ${value.toLocaleString()}`;
+                }
+
+                const percent = ((value / sum) * 100);
+                const pctText = isFinite(percent) ? percent.toFixed(1) : '0.0';
+                return `Q ${value.toLocaleString()} (${pctText}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  makeDoughnut('chartTipo', 'chartTipoEmpty', porTipoData);
+  makeDoughnut('chartProyecto', 'chartProyectoEmpty', porProyectoData);
+
+  // Nota: tu scatter ya lo manejas aparte (si tienes JS adicional, se queda igual)
+// ===============================
+// GRÁFICA DE BARRAS POR PROYECTO
+// ===============================
 const avancesPorProyectoData = @json($avancesPorProyecto);
 
-let chartTipoInstance = null;
-let chartProyectoInstance = null;
-let chartAvancesInstance = null;
-
-const chartPalette = [
-    '#0d6efd',
-    '#198754',
-    '#ffc107',
-    '#dc3545',
-    '#6f42c1',
-    '#0dcaf0',
-    '#fd7e14',
-    '#20c997',
-    '#6610f2',
-    '#d63384',
-    '#6c757d',
-    '#8b5e3c',
-    '#2f6f4e',
-    '#5c7cfa',
-    '#e8590c'
-];
-
-function generarColores(cantidad) {
-    return Array.from(
-        { length: cantidad },
-        (_, index) => chartPalette[index % chartPalette.length]
-    );
-}
-
-function crearLeyendaHtml(chart, contenedorId) {
-    const contenedor = document.getElementById(contenedorId);
-
-    if (!contenedor || !chart) {
-        return;
-    }
-
-    contenedor.innerHTML = '';
-
-    chart.data.labels.forEach((label, index) => {
-        const item = document.createElement('span');
-        item.className = 'legend-item';
-
-        const color = document.createElement('span');
-        color.className = 'legend-color';
-        color.style.backgroundColor =
-            chart.data.datasets[0].backgroundColor[index];
-
-        const texto = document.createElement('span');
-        texto.textContent = label;
-
-        item.appendChild(color);
-        item.appendChild(texto);
-
-        item.addEventListener('click', () => {
-            chart.toggleDataVisibility(index);
-            chart.update();
-
-            item.classList.toggle(
-                'is-hidden',
-                !chart.getDataVisibility(index)
-            );
-        });
-
-        contenedor.appendChild(item);
-    });
-}
-
-function crearDoughnut(canvasId, emptyId, legendId, rows) {
-    const canvas = document.getElementById(canvasId);
-    const emptyEl = document.getElementById(emptyId);
-
-    if (!canvas) {
-        return null;
-    }
-
-    const labels = (rows || []).map(row => row.label ?? 'Sin nombre');
-    const values = (rows || []).map(row => Number(row.total ?? 0));
-    const total = values.reduce((a, b) => a + b, 0);
-
-    if (!labels.length || total <= 0) {
-        emptyEl?.classList.remove('d-none');
-        return null;
-    }
-
-    const chart = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels,
-            datasets: [{
-                data: values,
-                backgroundColor: generarColores(labels.length),
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '62%',
-            layout: {
-                padding: 4
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label(context) {
-                            const suma = context.dataset.data.reduce(
-                                (a, b) => a + Number(b),
-                                0
-                            );
-
-                            const valor = Number(context.raw ?? 0);
-                            const porcentaje = suma > 0
-                                ? ((valor / suma) * 100).toFixed(1)
-                                : '0.0';
-
-                            return `${context.label}: Q ${valor.toLocaleString()} (${porcentaje}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    crearLeyendaHtml(chart, legendId);
-
-    return chart;
-}
-
-chartTipoInstance = crearDoughnut(
-    'chartTipo',
-    'chartTipoEmpty',
-    'legendTipo',
-    porTipoData
-);
-
-chartProyectoInstance = crearDoughnut(
-    'chartProyecto',
-    'chartProyectoEmpty',
-    'legendProyecto',
-    porProyectoData
-);
-
-// ===== GRÁFICA DE BARRAS POR PROYECTO =====
 const labelsBar = avancesPorProyectoData.map(item => item.label);
 const valoresBar = avancesPorProyectoData.map(item => Number(item.total));
+
 const totalBar = valoresBar.reduce((a, b) => a + b, 0);
 
-const porcentajes = valoresBar.map(valor =>
-    totalBar > 0
-        ? Number(((valor / totalBar) * 100).toFixed(2))
-        : 0
+const porcentajes = valoresBar.map(v =>
+    totalBar > 0 ? Number(((v / totalBar) * 100).toFixed(2)) : 0
 );
 
-const barCanvas = document.getElementById('barChart');
+const ctx = document.getElementById('barChart');
 
-if (barCanvas && labelsBar.length) {
-    chartAvancesInstance = new Chart(barCanvas, {
+if (ctx) {
+    new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labelsBar,
             datasets: [{
                 label: 'Porcentaje de avances',
                 data: porcentajes,
-                backgroundColor: '#0d6efd',
-                borderColor: '#0a58ca',
                 borderWidth: 1
             }]
         },
@@ -607,9 +448,9 @@ if (barCanvas && labelsBar.length) {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label(context) {
-                            const index = context.dataIndex;
-                            return `${porcentajes[index]}% (${valoresBar[index]} avances)`;
+                        label: function(context) {
+                            const i = context.dataIndex;
+                            return `${porcentajes[i]}% (${valoresBar[i]} avances)`;
                         }
                     }
                 }
@@ -630,43 +471,8 @@ if (barCanvas && labelsBar.length) {
             }
         }
     });
-} else {
-    document.getElementById('barChartEmpty')?.classList.remove('d-none');
 }
 
-// ===== EXPORTAR RESUMEN CON GRÁFICAS =====
-const formExportarResumen = document.getElementById('formExportarResumen');
 
-if (formExportarResumen) {
-    formExportarResumen.addEventListener('submit', function() {
-        const boton = this.querySelector('button[type="submit"]');
-
-        if (chartTipoInstance) {
-            document.getElementById('graficaTipoImagen').value =
-                chartTipoInstance.toBase64Image('image/png', 1);
-        }
-
-        if (chartProyectoInstance) {
-            document.getElementById('graficaProyectoImagen').value =
-                chartProyectoInstance.toBase64Image('image/png', 1);
-        }
-
-        if (chartAvancesInstance) {
-            document.getElementById('graficaAvancesImagen').value =
-                chartAvancesInstance.toBase64Image('image/png', 1);
-        }
-
-        if (boton) {
-            boton.disabled = true;
-            boton.innerHTML = 'Generando PDF...';
-
-            setTimeout(() => {
-                boton.disabled = false;
-                boton.innerHTML =
-                    '<i class="bi bi-file-earmark-pdf me-1"></i> Exportar resumen';
-            }, 4000);
-        }
-    });
-}
 </script>
 @endsection

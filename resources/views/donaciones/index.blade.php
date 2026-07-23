@@ -1,4 +1,4 @@
-@extends('layouts.app')
+ @extends('layouts.app')
 
 @section('content')
 
@@ -102,6 +102,122 @@ tr.js-row:hover {
 
     </div>
   </div>
+
+
+{{-- FILTROS --}}
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+
+    <form method="GET"
+          action="{{ route('donaciones.index') }}"
+          class="row g-3 align-items-end">
+
+      {{-- BÚSQUEDA --}}
+      <div class="col-lg-4 col-md-6">
+        <label for="q" class="form-label">
+          Buscar
+        </label>
+
+        <input type="text"
+               name="q"
+               id="q"
+               class="form-control"
+               value="{{ $q }}"
+               placeholder="Empresa, NIT, contacto o referencia">
+      </div>
+
+      {{-- FECHA DESDE --}}
+      <div class="col-lg-2 col-md-3">
+        <label for="from" class="form-label">
+          Desde
+        </label>
+
+        <input type="date"
+               name="from"
+               id="from"
+               class="form-control"
+               value="{{ $from }}">
+      </div>
+
+      {{-- FECHA HASTA --}}
+      <div class="col-lg-2 col-md-3">
+        <label for="to" class="form-label">
+          Hasta
+        </label>
+
+        <input type="date"
+               name="to"
+               id="to"
+               class="form-control"
+               value="{{ $to }}">
+      </div>
+
+      {{-- TIPO DE DONACIÓN --}}
+      <div class="col-lg-2 col-md-6">
+        <label for="tipo" class="form-label">
+          Tipo
+        </label>
+
+        <select name="tipo"
+                id="tipo"
+                class="form-select">
+
+          <option value="">Todos</option>
+
+          @foreach($tipos as $item)
+            <option value="{{ $item->id_tipo_donacion }}"
+              @selected((string) $tipo === (string) $item->id_tipo_donacion)>
+              {{ $item->nombre }}
+            </option>
+          @endforeach
+
+        </select>
+      </div>
+
+      {{-- PROYECTO --}}
+      <div class="col-lg-2 col-md-6">
+        <label for="proyecto" class="form-label">
+          Proyecto
+        </label>
+
+        <select name="proyecto"
+                id="proyecto"
+                class="form-select">
+
+          <option value="">Todos</option>
+
+          @foreach($proyectos as $item)
+            <option value="{{ $item->id_proyecto }}"
+              @selected((string) $proyecto === (string) $item->id_proyecto)>
+              {{ $item->nombre }}
+            </option>
+          @endforeach
+
+        </select>
+      </div>
+
+      {{-- BOTONES --}}
+      <div class="col-12">
+        <div class="d-flex gap-2">
+
+          <button type="submit"
+                  class="btn btn-primary">
+            Filtrar
+          </button>
+
+          <a href="{{ route('donaciones.index') }}"
+             class="btn btn-outline-secondary">
+            Limpiar filtros
+          </a>
+
+        </div>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
 
   {{-- TABLA --}}
   <div class="card shadow-sm">

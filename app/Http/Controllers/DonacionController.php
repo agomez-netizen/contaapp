@@ -290,7 +290,7 @@ class DonacionController extends Controller
                 'd.created_at'
             )
             ->orderByDesc('d.id_donacion')
-            ->paginate(5)
+            ->paginate(20)
             ->appends($request->query());
 
         // ===== CATÁLOGOS PARA FILTROS =====
@@ -311,6 +311,10 @@ class DonacionController extends Controller
             'resumenTipos', 'totalGeneralTipos'
         ));
     }
+
+
+
+
 
 public function exportExcel(Request $request)
 {
