@@ -27,52 +27,76 @@ class MovimientoFinancieroController extends Controller
         ));
     }
 
-    private function queryHistorial(Request $request)
-    {
-        $query = MovimientoFinanciero::with([
-            'proyecto',
-            'subproyecto',
-            'rubro',
-            'usuario'
-        ]);
+private function queryHistorial(Request $request)
+{
+    $query = MovimientoFinanciero::with([
+        'proyecto',
+        'subproyecto',
+        'rubro',
+        'usuario'
+    ]);
 
-        if ($request->filled('tipo_movimiento')) {
-            $query->where('tipo_movimiento', $request->tipo_movimiento);
-        }
-
-        if ($request->filled('tipo_documento')) {
-            $tiposDocumento = $request->input('tipo_documento');
-
-            if (!is_array($tiposDocumento)) {
-                $tiposDocumento = [$tiposDocumento];
-            }
-
-            $query->whereIn('tipo_documento', $tiposDocumento);
-        }
-
-        if ($request->filled('id_proyecto')) {
-            $query->where('id_proyecto', $request->id_proyecto);
-        }
-
-        if ($request->filled('id_subproyecto')) {
-            $query->where('id_subproyecto', $request->id_subproyecto);
-        }
-
-        if ($request->filled('id_rubro')) {
-            $query->where('id_rubro', $request->id_rubro);
-        }
-
-        if ($request->filled('fecha_inicio')) {
-            $query->whereDate('fecha_documento', '>=', $request->fecha_inicio);
-        }
-
-        if ($request->filled('fecha_fin')) {
-            $query->whereDate('fecha_documento', '<=', $request->fecha_fin);
-        }
-
-        return $query->orderBy('fecha_documento', 'desc')
-            ->orderBy('id_movimiento', 'desc');
+    if ($request->filled('tipo_movimiento')) {
+        $query->where('tipo_movimiento', $request->tipo_movimiento);
     }
+
+    if ($request->filled('tipo_documento')) {
+        $tiposDocumento = $request->input('tipo_documento');
+
+        if (!is_array($tiposDocumento)) {
+            $tiposDocumento = [$tiposDocumento];
+        }
+
+        $query->whereIn('tipo_documento', $tiposDocumento);
+    }
+
+    if ($request->filled('no_documento')) {
+        $noDocumento = trim($request->no_documento);
+
+        $query->where('no_documento', 'like', "%{$noDocumento}%");
+    }
+
+    if ($request->filled('empresa_proveedor')) {
+        $empresaProveedor = trim($request->empresa_proveedor);
+
+        $query->where(function ($subquery) use ($empresaProveedor) {
+            $subquery->where('empresa', 'like', "%{$empresaProveedor}%")
+                ->orWhere('proveedor', 'like', "%{$empresaProveedor}%");
+        });
+    }
+
+    if ($request->filled('id_proyecto')) {
+        $query->where('id_proyecto', $request->id_proyecto);
+    }
+
+    if ($request->filled('id_subproyecto')) {
+        $query->where('id_subproyecto', $request->id_subproyecto);
+    }
+
+    if ($request->filled('id_rubro')) {
+        $query->where('id_rubro', $request->id_rubro);
+    }
+
+    if ($request->filled('fecha_inicio')) {
+        $query->whereDate(
+            'fecha_documento',
+            '>=',
+            $request->fecha_inicio
+        );
+    }
+
+    if ($request->filled('fecha_fin')) {
+        $query->whereDate(
+            'fecha_documento',
+            '<=',
+            $request->fecha_fin
+        );
+    }
+
+    return $query
+        ->orderByDesc('fecha_documento')
+        ->orderByDesc('id_movimiento');
+}
 
     public function historial(Request $request)
     {
@@ -87,7 +111,7 @@ class MovimientoFinancieroController extends Controller
         });
 
         $movimientos = $this->queryHistorial($request)
-            ->paginate(5)
+            ->paginate(20)
             ->withQueryString();
 
         $proyectos = Proyecto::where('activo', 1)->orderBy('nombre')->get();

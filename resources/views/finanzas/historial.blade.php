@@ -29,106 +29,130 @@
         <div class="card-body">
             <form method="GET" action="{{ route('finanzas.historial') }}">
 
-                <div class="row g-3">
+<div class="row g-3">
 
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">Movimiento</label>
-                        <select name="tipo_movimiento" class="form-select">
-                            <option value="">Todos</option>
-                            <option value="INGRESO" {{ request('tipo_movimiento') == 'INGRESO' ? 'selected' : '' }}>Ingreso</option>
-                            <option value="EGRESO" {{ request('tipo_movimiento') == 'EGRESO' ? 'selected' : '' }}>Egreso</option>
-                        </select>
+    {{-- Movimiento --}}
+    <div class="col-md-2">
+        <label class="form-label fw-semibold">Movimiento</label>
+        <select name="tipo_movimiento" class="form-select">
+            <option value="">Todos</option>
+            <option value="INGRESO" {{ request('tipo_movimiento') == 'INGRESO' ? 'selected' : '' }}>Ingreso</option>
+            <option value="EGRESO" {{ request('tipo_movimiento') == 'EGRESO' ? 'selected' : '' }}>Egreso</option>
+        </select>
+    </div>
+
+    {{-- Tipo Documento --}}
+    <div class="col-md-2">
+        <label class="form-label fw-semibold">Tipo Documento</label>
+
+        @php
+            $tiposSeleccionados = request('tipo_documento', []);
+            if (!is_array($tiposSeleccionados)) {
+                $tiposSeleccionados = [$tiposSeleccionados];
+            }
+
+            $tiposDocumento = [
+                'FACTURA' => 'Factura',
+                'RECIBO DE DONACION' => 'Recibo de Donación',
+                'COTIZACION' => 'Cotización',
+                'PRESUPUESTO' => 'Presupuesto',
+                'TRANSFERENCIA' => 'Transferencia',
+                'CARTA' => 'Carta',
+                'OTRO' => 'Otro',
+            ];
+        @endphp
+
+        <div class="dropdown">
+            <button class="form-select text-start"
+                    type="button"
+                    data-bs-toggle="dropdown">
+                Tipo Documento
+            </button>
+
+            <div class="dropdown-menu p-3" style="min-width:260px; max-height:300px; overflow:auto;">
+
+                @foreach($tiposDocumento as $valor => $texto)
+                    <div class="form-check mb-2">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               name="tipo_documento[]"
+                               value="{{ $valor }}"
+                               id="tipo_{{ $loop->index }}"
+                               {{ in_array($valor,$tiposSeleccionados) ? 'checked' : '' }}>
+
+                        <label class="form-check-label" for="tipo_{{ $loop->index }}">
+                            {{ $texto }}
+                        </label>
                     </div>
+                @endforeach
 
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">Tipo Documento</label>
+            </div>
+        </div>
+    </div>
 
-                    <div class="dropdown">
-                        <button class="form-select text-start"
-                                type="button"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Tipo Documento
-                        </button>
+    {{-- No Documento --}}
+    <div class="col-md-2">
+        <label class="form-label fw-semibold">No. Documento</label>
+        <input type="text"
+               name="no_documento"
+               class="form-control"
+               placeholder="Buscar..."
+               value="{{ request('no_documento') }}">
+    </div>
 
-                        <div class="dropdown-menu p-3" style="min-width: 260px;">
+    {{-- Empresa --}}
+    <div class="col-md-3">
+        <label class="form-label fw-semibold">Empresa / Proveedor</label>
+        <input type="text"
+               name="empresa_proveedor"
+               class="form-control"
+               placeholder="Buscar..."
+               value="{{ request('empresa_proveedor') }}">
+    </div>
 
-                            @php
-                                $tiposSeleccionados = request('tipo_documento', []);
-                                if (!is_array($tiposSeleccionados)) {
-                                    $tiposSeleccionados = [$tiposSeleccionados];
-                                }
+    {{-- Proyecto --}}
+    <div class="col-md-2">
+        <label class="form-label fw-semibold">Proyecto</label>
+        <select name="id_proyecto" class="form-select">
+            <option value="">Todos</option>
+            @foreach($proyectos as $proyecto)
+                <option value="{{ $proyecto->id_proyecto }}"
+                    {{ request('id_proyecto') == $proyecto->id_proyecto ? 'selected' : '' }}>
+                    {{ $proyecto->nombre }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-                                $tiposDocumento = [
-                                    'FACTURA' => 'Factura',
-                                    'RECIBO DE DONACION' => 'Recibo de Donación',
-                                    'COTIZACION' => 'Cotización',
-                                    'PRESUPUESTO' => 'Presupuesto',
-                                    'TRANSFERENCIA' => 'Transferencia',
-                                    'CARTA' => 'Carta',
-                                    'OTRO' => 'Otro',
-                                ];
-                            @endphp
+    {{-- Subproyecto --}}
+    <div class="col-md-4">
+        <label class="form-label fw-semibold">Subproyecto</label>
+        <select name="id_subproyecto" class="form-select">
+            <option value="">Todos</option>
+            @foreach($subproyectos as $subproyecto)
+                <option value="{{ $subproyecto->id_subproyecto }}"
+                    {{ request('id_subproyecto') == $subproyecto->id_subproyecto ? 'selected' : '' }}>
+                    {{ $subproyecto->nombre }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-                            @foreach($tiposDocumento as $valor => $texto)
+    {{-- Rubro --}}
+    <div class="col-md-4">
+        <label class="form-label fw-semibold">Rubro</label>
+        <select name="id_rubro" class="form-select">
+            <option value="">Todos</option>
+            @foreach($rubros as $rubro)
+                <option value="{{ $rubro->id_rubro }}"
+                    {{ request('id_rubro') == $rubro->id_rubro ? 'selected' : '' }}>
+                    {{ $rubro->nombre }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input"
-                                        type="checkbox"
-                                        name="tipo_documento[]"
-                                        value="{{ $valor }}"
-                                        id="tipo_{{ $loop->index }}"
-                                        {{ in_array($valor, $tiposSeleccionados) ? 'checked' : '' }}>
-
-                                    <label class="form-check-label"
-                                        for="tipo_{{ $loop->index }}">
-                                        {{ $texto }}
-                                    </label>
-                                </div>
-
-                            @endforeach
-
-                        </div>
-                    </div>
-                </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold">Proyecto</label>
-                        <select name="id_proyecto" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($proyectos as $proyecto)
-                                <option value="{{ $proyecto->id_proyecto }}" {{ request('id_proyecto') == $proyecto->id_proyecto ? 'selected' : '' }}>
-                                    {{ $proyecto->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Subproyecto</label>
-                        <select name="id_subproyecto" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($subproyectos as $subproyecto)
-                                <option value="{{ $subproyecto->id_subproyecto }}" {{ request('id_subproyecto') == $subproyecto->id_subproyecto ? 'selected' : '' }}>
-                                    {{ $subproyecto->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">Rubro</label>
-                        <select name="id_rubro" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach($rubros as $rubro)
-                                <option value="{{ $rubro->id_rubro }}" {{ request('id_rubro') == $rubro->id_rubro ? 'selected' : '' }}>
-                                    {{ $rubro->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                </div>
+</div>
 
                 <div class="row g-3 mt-1">
                     <div class="col-md-2">
