@@ -16,6 +16,10 @@ class Paciente extends Model
         'tipo_consulta','tipo_operacion',
         'empresa','nombre_empresa',
         'referido_por','telefono_referente','tipo_contacto',
-        'tipo_consulta_referente','descripcion'
+        'tipo_consulta_referente','descripcion',
+        'estado_paciente',
+        'tipo_rebaja_tramite',
+        'institucion_examen',
+        'lugar_ingreso',
     ];
 }

@@ -4,54 +4,9 @@
 
 @section('content')
 @php
-  // Getter robusto para Eloquent/arrays
-  $get = function($obj, array $keys, $default = '—') {
-    foreach ($keys as $k) {
-      $val = data_get($obj, $k);
-      if ($val !== null && $val !== '') return $val;
-    }
-    return $default;
-  };
-
-  // Campos según tu tabla
-  $idPaciente          = $get($paciente, ['id_paciente']);
-  $nombre             = $get($paciente, ['nombre', 'nombre_paciente']);
-  $dpi                = $get($paciente, ['dpi']);
-  $edad               = $get($paciente, ['edad']);
-  $sexo               = $get($paciente, ['sexo']);
-  $prioridad          = $get($paciente, ['prioridad'], 'NORMAL');
-
-  $tipoConsulta        = $get($paciente, ['tipo_consulta', 'consulta']);
-  $tipoOperacion       = $get($paciente, ['tipo_operacion']);
-
-  $carnet              = $get($paciente, ['carnet', 'no_carnet', 'numero_carnet']);
-  $telefono            = $get($paciente, ['telefono', 'teléfono', 'tel']);
-  $correo              = $get($paciente, ['correo', 'correo_electronico', 'email', 'e_mail']);
-
-  $empresa             = $get($paciente, ['empresa']);
-  $nombreEmpresa       = $get($paciente, ['nombre_empresa']);
-
-  $departamento        = $get($paciente, ['departamento']);
-  $municipio           = $get($paciente, ['municipio']);
-
-  $referidoPor         = $get($paciente, ['referido_por']);
-  $telefonoReferente   = $get($paciente, ['telefono_referente']);
-  $tipoConsultaRef     = $get($paciente, ['tipo_consulta_referente']);
-  $tipoContacto        = $get($paciente, ['tipo_contacto']);
-
-  $descripcion         = $get($paciente, ['descripcion']);
-
-  $createdAt           = $get($paciente, ['created_at']);
-  $updatedAt           = $get($paciente, ['updated_at']);
-
-  // Helper rápido para imprimir tarjetas de campos
-  $field = function($label, $value) {
-    return '
-      <div class="col-md-4">
-        <div class="text-muted small">'.e($label).'</div>
-        <div class="fw-semibold">'.e($value).'</div>
-      </div>
-    ';
+  $valor = function ($campo, $predeterminado = '—') use ($paciente) {
+      $dato = data_get($paciente, $campo);
+      return ($dato !== null && $dato !== '') ? $dato : $predeterminado;
   };
 @endphp
 
@@ -59,11 +14,11 @@
 
   <div class="card shadow-sm border-0">
     <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-      <h5 class="mb-0">Detalle Paciente #{{ $idPaciente }}</h5>
+      <h5 class="mb-0">Detalle Paciente #{{ $paciente->id_paciente }}</h5>
 
       <div class="d-flex gap-2">
         <a href="{{ route('pacientes.index') }}" class="btn btn-sm btn-light">← Volver</a>
-        <a href="{{ route('pacientes.edit', $paciente->id_paciente) }}" class="btn btn-sm btn-light">✏️ Editar</a>
+        <a href="{{ route('pacientes.edit', $paciente->id_paciente) }}" class="btn btn-sm btn-light">Editar</a>
       </div>
     </div>
 
@@ -75,15 +30,31 @@
           <hr class="mt-0">
         </div>
 
-        {!! $field('Nombre del paciente', $nombre) !!}
-        {!! $field('DPI', $dpi) !!}
-        {!! $field('Edad', $edad) !!}
-        {!! $field('Sexo', $sexo) !!}
+        @foreach([
+          'Nombre del paciente' => 'nombre',
+          'DPI' => 'dpi',
+          'Edad' => 'edad',
+          'Sexo' => 'sexo',
+          'Carnet' => 'carnet',
+          'Teléfono' => 'telefono',
+          'Correo' => 'correo',
+          'Tipo de consulta' => 'tipo_consulta',
+          'Tipo de operación' => 'tipo_operacion',
+          'Departamento' => 'departamento',
+          'Municipio' => 'municipio',
+          'Organización' => 'empresa',
+          'Nombre de la empresa' => 'nombre_empresa',
+        ] as $etiqueta => $campo)
+          <div class="col-md-4">
+            <div class="text-muted small">{{ $etiqueta }}</div>
+            <div class="fw-semibold">{{ $valor($campo) }}</div>
+          </div>
+        @endforeach
 
         <div class="col-md-4">
           <div class="text-muted small">Prioridad</div>
           <div class="fw-semibold">
-            @if($prioridad === 'PRIORITARIO')
+            @if(($paciente->prioridad ?? 'NORMAL') === 'PRIORITARIO')
               <span class="badge bg-danger">PRIORITARIO</span>
             @else
               <span class="badge bg-secondary">NORMAL</span>
@@ -91,41 +62,71 @@
           </div>
         </div>
 
-        {!! $field('Tipo de consulta', $tipoConsulta) !!}
-        {!! $field('Tipo de operación', $tipoOperacion) !!}
-        {!! $field('Carnet', $carnet) !!}
-        {!! $field('Teléfono', $telefono) !!}
-        {!! $field('Correo', $correo) !!}
+        <div class="col-md-4">
+          <div class="text-muted small">Estado del Paciente</div>
+          <div class="fw-semibold">
+            @if(($paciente->estado_paciente ?? 'EN ESPERA') === 'EN JORNADA')
+              <span class="badge bg-success">EN JORNADA</span>
+            @else
+              <span class="badge bg-warning text-dark">EN ESPERA</span>
+            @endif
+          </div>
+        </div>
 
-        {!! $field('Empresa', $empresa) !!}
-        {!! $field('Nombre empresa', $nombreEmpresa) !!}
+        <div class="col-12 mt-4">
+          <h6 class="text-primary mb-2">Rebaja, Trámite e Ingreso</h6>
+          <hr class="mt-0">
+        </div>
 
-        {!! $field('Departamento', $departamento) !!}
-        {!! $field('Municipio', $municipio) !!}
+        <div class="col-md-4">
+          <div class="text-muted small">Tipo de rebaja o trámite</div>
+          <div class="fw-semibold">{{ $valor('tipo_rebaja_tramite') }}</div>
+        </div>
 
-        {!! $field('Referido por', $referidoPor) !!}
-        {!! $field('Teléfono referente', $telefonoReferente) !!}
-        {!! $field('Tipo consulta referente', $tipoConsultaRef) !!}
-        {!! $field('Tipo de contacto', $tipoContacto) !!}
+        <div class="col-md-4">
+          <div class="text-muted small">Institución del examen</div>
+          <div class="fw-semibold">{{ $valor('institucion_examen') }}</div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="text-muted small">Lugar de ingreso</div>
+          <div class="fw-semibold">{{ $valor('lugar_ingreso') }}</div>
+        </div>
+
+        <div class="col-12 mt-4">
+          <h6 class="text-primary mb-2">Datos del Referente</h6>
+          <hr class="mt-0">
+        </div>
+
+        @foreach([
+          'Referido por' => 'referido_por',
+          'Teléfono referente' => 'telefono_referente',
+          'Tipo de consulta referente' => 'tipo_consulta_referente',
+          'Tipo de contacto' => 'tipo_contacto',
+        ] as $etiqueta => $campo)
+          <div class="col-md-4">
+            <div class="text-muted small">{{ $etiqueta }}</div>
+            <div class="fw-semibold">{{ $valor($campo) }}</div>
+          </div>
+        @endforeach
 
         <div class="col-md-12">
           <div class="text-muted small">Descripción</div>
-          <div class="fw-semibold">{{ $descripcion }}</div>
+          <div class="fw-semibold">{{ $valor('descripcion') }}</div>
         </div>
 
-        {!! $field('Creado', $createdAt) !!}
-        {!! $field('Actualizado', $updatedAt) !!}
+        <div class="col-md-4">
+          <div class="text-muted small">Creado</div>
+          <div class="fw-semibold">{{ $valor('created_at') }}</div>
+        </div>
 
-        <div class="col-12 mt-2">
-          <div class="alert alert-light border mb-0">
-            <div class="text-muted small">Nota</div>
-            <div class="fw-semibold">Este registro se muestra en modo lectura.</div>
-          </div>
+        <div class="col-md-4">
+          <div class="text-muted small">Actualizado</div>
+          <div class="fw-semibold">{{ $valor('updated_at') }}</div>
         </div>
 
       </div>
     </div>
   </div>
-
 </div>
 @endsection

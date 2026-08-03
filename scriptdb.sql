@@ -920,3 +920,10 @@ ADD COLUMN monto_solicitado DECIMAL(12,2) NULL AFTER fecha_aplicacion,
 ADD COLUMN probabilidad ENUM('Alta','Media','Baja','En evaluación') DEFAULT 'En evaluación' AFTER monto_solicitado,
 ADD CONSTRAINT fk_proy_org_convocatoria
 FOREIGN KEY (convocatoria_id) REFERENCES convocatorias(id) ON DELETE CASCADE;
+
+
+ALTER TABLE pacientes
+ADD COLUMN estado_paciente VARCHAR(20) NULL AFTER prioridad,
+ADD COLUMN tipo_rebaja_tramite VARCHAR(150) NULL AFTER tipo_operacion,
+ADD COLUMN institucion_examen VARCHAR(100) NULL AFTER tipo_rebaja_tramite,
+ADD COLUMN lugar_ingreso VARCHAR(100) NULL AFTER institucion_examen;

@@ -7,17 +7,17 @@
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <h3 class="fw-bold mb-1">📋 Pacientes Ingresados</h3>
-      <div class="text-muted">Listado De Pacientes Ingresados</div>
+      <h3 class="fw-bold mb-1">Pacientes Ingresados</h3>
+      <div class="text-muted">Listado de pacientes ingresados</div>
     </div>
 
     <div class="d-flex gap-2">
       <a href="{{ route('pacientes.export.excel', request()->query()) }}" class="btn btn-outline-success">
-        📗 Exportar Excel
+        Exportar Excel
       </a>
 
       <a href="{{ route('pacientes.create') }}" class="btn btn-primary">
-        ✚ Nuevo Paciente
+        Nuevo Paciente
       </a>
     </div>
   </div>
@@ -27,18 +27,6 @@
       {{ session('ok') }}
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
-
-    <script>
-      setTimeout(() => {
-        const alertEl = document.getElementById('autoCloseAlert');
-        if (alertEl && window.bootstrap) {
-          const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
-          bsAlert.close();
-        } else if (alertEl) {
-          alertEl.remove();
-        }
-      }, 3500);
-    </script>
   @endif
 
   <div class="card border-0 shadow-sm">
@@ -47,7 +35,7 @@
       <form class="row g-2 mb-3" method="GET" action="{{ route('pacientes.index') }}">
         <div class="col-md-10">
           <input type="text" name="q" class="form-control"
-                 placeholder="Buscar por nombre, DPI, teléfono, departamento, municipio, prioridad, consulta o tipo operación..."
+                 placeholder="Buscar por nombre, DPI, estado, trámite, institución o lugar de ingreso..."
                  value="{{ $q ?? '' }}">
         </div>
         <div class="col-md-2 d-grid">
@@ -59,61 +47,73 @@
         <table class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
-              <th>#</th>
               <th>Nombre</th>
               <th>Prioridad</th>
+              <th>Estado</th>
               <th>DPI</th>
               <th>Teléfono</th>
-              <th>Carnet</th>
-              <th>Referido Por</th>
               <th>Consulta</th>
-              <th>Tipo Operación</th>
+              <th>Rebaja o Trámite</th>
+              <th>Lugar de Ingreso</th>
               <th class="text-end">Acciones</th>
             </tr>
           </thead>
 
           <tbody>
             @forelse($pacientes as $p)
-              @php $prio = $p->prioridad ?? 'NORMAL'; @endphp
+              @php
+                $prioridad = $p->prioridad ?? 'NORMAL';
+                $estado = $p->estado_paciente ?? 'EN ESPERA';
+              @endphp
 
-              <tr class="row-click {{ $prio === 'PRIORITARIO' ? 'table-warning' : '' }}"
+              <tr class="row-click {{ $prioridad === 'PRIORITARIO' ? 'table-warning' : '' }}"
                   data-href="{{ route('pacientes.show', $p->id_paciente) }}">
-
-                <td class="fw-semibold">{{ $p->id_paciente }}</td>
                 <td>{{ $p->nombre }}</td>
 
                 <td>
-                  @if($prio === 'PRIORITARIO')
+                  @if($prioridad === 'PRIORITARIO')
                     <span class="badge bg-danger">PRIORITARIO</span>
                   @else
                     <span class="badge bg-secondary">NORMAL</span>
                   @endif
                 </td>
 
+                <td>
+                  @if($estado === 'EN JORNADA')
+                    <span class="badge bg-success">EN JORNADA</span>
+                  @else
+                    <span class="badge bg-warning text-dark">EN ESPERA</span>
+                  @endif
+                </td>
+
                 <td>{{ $p->dpi }}</td>
                 <td>{{ $p->telefono }}</td>
-                <td>{{ $p->carnet }}</td>
-                <td>{{ $p->referido_por }}</td>
                 <td>{{ $p->tipo_consulta }}</td>
-                <td>{{ $p->tipo_operacion }}</td>
+                <td>
+                  {{ $p->tipo_rebaja_tramite }}
+                  @if($p->institucion_examen)
+                    <div class="small text-muted">{{ $p->institucion_examen }}</div>
+                  @endif
+                </td>
+                <td>{{ $p->lugar_ingreso }}</td>
 
                 <td class="text-end">
                   <a href="{{ route('pacientes.edit', $p->id_paciente) }}"
-                     class="btn btn-sm btn-outline-primary" title="Editar">✏️</a>
+                     class="btn btn-sm btn-outline-primary">✏️</a>
 
                   <form action="{{ route('pacientes.destroy', $p->id_paciente) }}"
                         method="POST" class="d-inline"
                         onsubmit="return confirm('¿Eliminar este paciente?');">
                     @csrf
                     @method('DELETE')
-                    <button class="btn btn-sm btn-outline-danger" type="submit" title="Eliminar">🗑️</button>
+                    <button class="btn btn-sm btn-outline-danger" type="submit">🗑️</button>
                   </form>
                 </td>
               </tr>
             @empty
               <tr>
                 <td colspan="10" class="text-center text-muted py-4">
-                  No hay pacientes registrados aún.
+                  No hay pacientes registrados.
                 </td>
               </tr>
             @endforelse
@@ -123,9 +123,9 @@
 
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-3">
         <div class="text-muted small">
-          Mostrando <strong>{{ $pacientes->firstItem() ?? 0 }}</strong>
-          a <strong>{{ $pacientes->lastItem() ?? 0 }}</strong>
-          de <strong>{{ $pacientes->total() }}</strong> registros
+          Mostrando {{ $pacientes->firstItem() ?? 0 }}
+          a {{ $pacientes->lastItem() ?? 0 }}
+          de {{ $pacientes->total() }} registros
         </div>
 
         @if($pacientes->hasPages())
@@ -135,23 +135,34 @@
 
     </div>
   </div>
-
 </div>
 
 <style>
   tr.row-click { cursor: pointer; }
-  tr.row-click:hover { background: rgba(13,110,253,.06); }
+  tr.row-click:hover { background: rgba(13, 110, 253, .06); }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('tr.row-click').forEach(function (row) {
-    row.addEventListener('click', function (e) {
-      if (e.target.closest('a, button, form, input, textarea, select, label')) return;
+    row.addEventListener('click', function (event) {
+      if (event.target.closest('a, button, form, input, textarea, select, label')) return;
+
       const url = row.getAttribute('data-href');
       if (url) window.location = url;
     });
   });
+
+  const alerta = document.getElementById('autoCloseAlert');
+  if (alerta) {
+    setTimeout(function () {
+      if (window.bootstrap) {
+        bootstrap.Alert.getOrCreateInstance(alerta).close();
+      } else {
+        alerta.remove();
+      }
+    }, 3500);
+  }
 });
 </script>
 @endsection
