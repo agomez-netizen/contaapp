@@ -2,6 +2,11 @@
 
 @section('content')
 
+@php
+    $idRol = (int) session('user.id_rol');
+    $puedeDesbloquear = in_array($idRol, [1, 3], true); // 1 = ADMINISTRADOR, 3 = GESTOR
+@endphp
+
 <div class="container-fluid py-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -113,7 +118,7 @@
     {{-- Proyecto --}}
     <div class="col-md-2">
         <label class="form-label fw-semibold">Proyecto</label>
-        <select name="id_proyecto" class="form-select">
+        <select name="id_proyecto"  id="id_proyecto" class="form-select">
             <option value="">Todos</option>
             @foreach($proyectos as $proyecto)
                 <option value="{{ $proyecto->id_proyecto }}"
@@ -127,10 +132,14 @@
     {{-- Subproyecto --}}
     <div class="col-md-4">
         <label class="form-label fw-semibold">Subproyecto</label>
-        <select name="id_subproyecto" class="form-select">
+        <select name="id_subproyecto"
+                id="id_subproyecto"
+                class="form-select">
             <option value="">Todos</option>
+
             @foreach($subproyectos as $subproyecto)
                 <option value="{{ $subproyecto->id_subproyecto }}"
+                        data-proyecto="{{ $subproyecto->id_proyecto }}"
                     {{ request('id_subproyecto') == $subproyecto->id_subproyecto ? 'selected' : '' }}>
                     {{ $subproyecto->nombre }}
                 </option>
@@ -212,17 +221,16 @@
                             <th>Monto Q</th>
                             <th>Monto $</th>
 
-                            @if(session('user.id_rol') == 1)
-                                <th>Acciones</th>
-                            @endif
+                            <th>Bloqueo</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         @forelse($movimientos as $mov)
-                            <tr style="cursor:pointer"
-                                data-bs-toggle="modal"
-                                data-bs-target="#detalleModal{{ $mov->id_movimiento }}">
+                            <tr class="fila-detalle"
+                                style="cursor:pointer"
+                                data-modal-id="detalleModal{{ $mov->id_movimiento }}">
 
                                 <td>
                                     <span class="badge {{ $mov->tipo_movimiento == 'EGRESO' ? 'bg-danger' : 'bg-success' }}">
@@ -245,9 +253,41 @@
                                 <td>Q {{ number_format($mov->monto_quetzales ?? $mov->monto, 2) }}</td>
                                 <td>$ {{ number_format($mov->monto_dolares ?? 0, 2) }}</td>
 
-                                @if(session('user.id_rol') == 1)
-                                    <td onclick="event.stopPropagation()">
-                                        <div class="d-flex gap-2">
+                                <td class="no-modal" onclick="event.stopPropagation()">
+                                    <form method="POST"
+                                          action="{{ route('finanzas.bloqueo', $mov->id_movimiento) }}"
+                                          class="form-bloqueo"
+                                          onclick="event.stopPropagation()">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <input type="hidden"
+                                               name="bloqueado"
+                                               value="{{ $mov->bloqueado ? 0 : 1 }}">
+
+                                        <div class="form-check form-switch mb-0"
+                                             onclick="event.stopPropagation()">
+
+                                            <input class="form-check-input switch-bloqueo"
+                                                   type="checkbox"
+                                                   role="switch"
+                                                   id="bloqueo_{{ $mov->id_movimiento }}"
+                                                   onclick="event.stopPropagation()"
+                                                   {{ $mov->bloqueado ? 'checked' : '' }}
+                                                   {{ $mov->bloqueado && !$puedeDesbloquear ? 'disabled' : '' }}>
+
+                                            <label class="form-check-label small"
+                                                   for="bloqueo_{{ $mov->id_movimiento }}"
+                                                   onclick="event.stopPropagation()">
+                                                {{ $mov->bloqueado ? 'Bloqueado' : 'Abierto' }}
+                                            </label>
+                                        </div>
+                                    </form>
+                                </td>
+
+                                <td class="no-modal" onclick="event.stopPropagation()">
+                                    <div class="d-flex gap-2">
+                                        @if(!$mov->bloqueado)
                                             <a href="{{ route('finanzas.edit', $mov->id_movimiento) }}"
                                                class="btn btn-warning btn-sm"
                                                title="Editar">
@@ -260,13 +300,29 @@
                                                 @csrf
                                                 @method('DELETE')
 
-                                                <button class="btn btn-danger btn-sm" title="Eliminar">
+                                                <button type="submit"
+                                                        class="btn btn-danger btn-sm"
+                                                        title="Eliminar">
                                                     🗑️
                                                 </button>
                                             </form>
-                                        </div>
-                                    </td>
-                                @endif
+                                        @else
+                                            <button type="button"
+                                                    class="btn btn-warning btn-sm"
+                                                    title="El registro está bloqueado"
+                                                    disabled>
+                                                ✏️
+                                            </button>
+
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm"
+                                                    title="El registro está bloqueado"
+                                                    disabled>
+                                                🗑️
+                                            </button>
+                                        @endif
+                                    </div>
+                                </td>
                             </tr>
 
                             <div class="modal fade" id="detalleModal{{ $mov->id_movimiento }}" tabindex="-1">
@@ -416,5 +472,115 @@
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.fila-detalle').forEach(function (fila) {
+        fila.addEventListener('click', function (event) {
+            if (
+                event.target.closest(
+                    '.no-modal, button, a, form, input, label, select, textarea'
+                )
+            ) {
+                return;
+            }
+
+            const modalId = this.dataset.modalId;
+            const modalElemento = document.getElementById(modalId);
+
+            if (!modalElemento) {
+                return;
+            }
+
+            bootstrap.Modal.getOrCreateInstance(modalElemento).show();
+        });
+    });
+
+    document.querySelectorAll('.switch-bloqueo').forEach(function (switchBloqueo) {
+        switchBloqueo.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        switchBloqueo.addEventListener('change', function (event) {
+            event.stopPropagation();
+
+            const formulario = this.closest('.form-bloqueo');
+            const etiqueta = formulario.querySelector('.form-check-label');
+            const campoBloqueado = formulario.querySelector(
+                'input[name="bloqueado"]'
+            );
+
+            campoBloqueado.value = this.checked ? 1 : 0;
+            etiqueta.textContent = this.checked ? 'Bloqueado' : 'Abierto';
+
+            formulario.submit();
+        });
+    });
+
+    document.querySelectorAll('.form-bloqueo').forEach(function (formulario) {
+        formulario.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+    });
+
+    const proyectoSelect = document.getElementById('id_proyecto');
+    const subproyectoSelect = document.getElementById('id_subproyecto');
+
+    if (!proyectoSelect || !subproyectoSelect) {
+        return;
+    }
+
+    const subproyectos = Array.from(
+        subproyectoSelect.querySelectorAll('option[data-proyecto]')
+    ).map(option => ({
+        value: option.value,
+        nombre: option.textContent.trim(),
+        proyecto: option.dataset.proyecto
+    }));
+
+    const subproyectoSeleccionado = "{{ request('id_subproyecto') }}";
+
+    function cargarSubproyectos() {
+        const proyectoId = proyectoSelect.value;
+        const valorActual = subproyectoSelect.value || subproyectoSeleccionado;
+
+        subproyectoSelect.innerHTML = '<option value="">Todos</option>';
+
+        if (!proyectoId) {
+            subproyectoSelect.disabled = true;
+            return;
+        }
+
+        const filtrados = subproyectos.filter(
+            subproyecto => subproyecto.proyecto === proyectoId
+        );
+
+        filtrados.forEach(subproyecto => {
+            const option = document.createElement('option');
+
+            option.value = subproyecto.value;
+            option.textContent = subproyecto.nombre;
+            option.selected = subproyecto.value === valorActual;
+
+            subproyectoSelect.appendChild(option);
+        });
+
+        subproyectoSelect.disabled = filtrados.length === 0;
+
+        if (filtrados.length === 0) {
+            subproyectoSelect.innerHTML =
+                '<option value="">Este proyecto no tiene subproyectos</option>';
+        }
+    }
+
+    proyectoSelect.addEventListener('change', function () {
+        subproyectoSelect.value = '';
+        cargarSubproyectos();
+    });
+
+    cargarSubproyectos();
+});
+</script>
 
 @endsection

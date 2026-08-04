@@ -927,3 +927,6 @@ ADD COLUMN estado_paciente VARCHAR(20) NULL AFTER prioridad,
 ADD COLUMN tipo_rebaja_tramite VARCHAR(150) NULL AFTER tipo_operacion,
 ADD COLUMN institucion_examen VARCHAR(100) NULL AFTER tipo_rebaja_tramite,
 ADD COLUMN lugar_ingreso VARCHAR(100) NULL AFTER institucion_examen;
+
+ALTER TABLE movimientos_financieros
+ADD bloqueado TINYINT(1) NOT NULL DEFAULT 1;

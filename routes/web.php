@@ -262,6 +262,10 @@ Route::get('/finanzas/exportar', [MovimientoFinancieroController::class, 'export
 
 Route::resource('finanzas', MovimientoFinancieroController::class);
 
+Route::patch('/finanzas/{id}/bloqueo',
+[MovimientoFinancieroController::class, 'cambiarBloqueo']
+)->name('finanzas.bloqueo');
+
 Route::get('/subproyectos/proyecto/{id}', [SubproyectoController::class, 'porProyecto'])
     ->name('subproyectos.porProyecto');
 

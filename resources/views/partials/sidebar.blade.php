@@ -326,7 +326,7 @@ $crowOpen = request()->routeIs('cooperantes.*');
 
         @endif
 
-         @if($isAdmin || $isGestor )
+         @if($isAdmin || $isGestor || $isProyectos )
         <a href="{{ route('contactos.index') }}"
            class="navitem {{ request()->routeIs('contactos.*') ? 'active' : '' }}"
            title="Contactos">

@@ -245,7 +245,22 @@ private function queryHistorial(Request $request)
 
     public function edit($id)
     {
-        if (session('user.id_rol') != 1) {
+        $movimiento = MovimientoFinanciero::findOrFail($id);
+
+        $idRol = (int) session('user.id_rol');
+
+        if ($movimiento->bloqueado && !in_array($idRol, [1, 3])) {
+            return redirect()
+                ->route('finanzas.historial')
+                ->with(
+                    'error',
+                    'Este registro está bloqueado. Solo Administrador o Gestor pueden modificarlo.'
+                );
+        }
+
+        $rol = strtoupper((string) session('user.rol'));
+
+        if (!in_array($rol, ['ADMIN', 'ADMINISTRADOR', 'GESTOR', 'PROYECTOS'])) {
             abort(403);
         }
 
@@ -265,7 +280,22 @@ private function queryHistorial(Request $request)
 
     public function update(Request $request, $id)
     {
-        if (session('user.id_rol') != 1) {
+        $movimiento = MovimientoFinanciero::findOrFail($id);
+
+        $idRol = (int) session('user.id_rol');
+
+        if ($movimiento->bloqueado && !in_array($idRol, [1, 3])) {
+            return redirect()
+                ->route('finanzas.historial')
+                ->with(
+                    'error',
+                    'Este registro está bloqueado. Solo Administrador o Gestor pueden modificarlo.'
+                );
+        }
+
+        $rol = strtoupper((string) session('user.rol'));
+
+        if (!in_array($rol, ['ADMIN', 'ADMINISTRADOR', 'GESTOR', 'PROYECTOS'])) {
             abort(403);
         }
 
@@ -299,7 +329,21 @@ private function queryHistorial(Request $request)
 
     public function destroy($id)
     {
-        if (session('user.id_rol') != 1) {
+        $movimiento = MovimientoFinanciero::findOrFail($id);
+
+        $idRol = (int) session('user.id_rol');
+
+        if ($movimiento->bloqueado && !in_array($idRol, [1, 3])) {
+            return redirect()
+                ->route('finanzas.historial')
+                ->with(
+                    'error',
+                    'Este registro está bloqueado. Solo Administrador o Gestor pueden modificarlo.'
+                );
+        }
+        $rol = strtoupper((string) session('user.rol'));
+
+        if (!in_array($rol, ['ADMIN', 'ADMINISTRADOR', 'GESTOR', 'PROYECTOS'])) {
             abort(403);
         }
 
@@ -316,4 +360,33 @@ private function queryHistorial(Request $request)
             ->route('finanzas.historial')
             ->with('success', 'Movimiento eliminado correctamente.');
     }
+
+
+
+    public function cambiarBloqueo(Request $request, $id)
+{
+    $movimiento = MovimientoFinanciero::findOrFail($id);
+
+    $idRol = (int) session('user.id_rol');
+
+    // Si está bloqueado, solo ADMIN y GESTOR pueden desbloquearlo
+    if ($movimiento->bloqueado && !in_array($idRol, [1, 2])) {
+        return back()->with(
+            'error',
+            'Solo Administrador o Gestor pueden desbloquear este registro.'
+        );
+    }
+
+    $movimiento->bloqueado = $request->boolean('bloqueado');
+    $movimiento->save();
+
+    return back()->with(
+        'success',
+        $movimiento->bloqueado
+            ? 'Registro bloqueado correctamente.'
+            : 'Registro desbloqueado correctamente.'
+    );
+}
+
+
 }
