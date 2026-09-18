@@ -12,7 +12,7 @@
     </div>
 
     <div class="card-body">
-      <form method="POST" action="{{ route('donaciones.update', $donacion->id_donacion) }}">
+      <form enctype="multipart/form-data" method="POST" action="{{ route('donaciones.update', $donacion->id_donacion) }}">
         @csrf
         @method('PUT')
 
@@ -68,36 +68,14 @@
                    value="{{ old('correo', $donacion->correo) }}">
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Unidades</label>
-            <input id="unidades" type="number" name="unidades" class="form-control" min="0"
-                   value="{{ old('unidades', $donacion->unidades) }}">
-          </div>
+          <input type="hidden" id="unidades" name="unidades" value="{{ old('unidades', $donacion->unidades) }}">
 
           <div class="col-md-6">
             <label class="form-label">Descripción</label>
             <textarea name="descripcion" class="form-control" rows="2">{{ old('descripcion', $donacion->descripcion) }}</textarea>
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Valor total donación</label>
-            {{-- Visible (formateado) --}}
-            <input
-              id="valor_total_donacion_display"
-              type="text"
-              class="form-control money-display"
-              inputmode="decimal"
-              placeholder="Q 0.00"
-              value="{{ old('valor_total_donacion', $donacion->valor_total_donacion) }}"
-            >
-            {{-- Real (numérico limpio) --}}
-            <input
-              id="valor_total_donacion"
-              type="hidden"
-              name="valor_total_donacion"
-              value="{{ old('valor_total_donacion', $donacion->valor_total_donacion) }}"
-            >
-          </div>
+          <input type="hidden" id="valor_total_donacion" name="valor_total_donacion" value="{{ old('valor_total_donacion', $donacion->valor_total_donacion) }}">
         </div>
 
         {{-- ================= ENTREGA ================= --}}
@@ -130,25 +108,9 @@
                    value="{{ old('quien_recibe', $donacion->quien_recibe) }}">
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Tipo de donación</label>
-            <select name="id_tipo_donacion" class="form-select">
-              <option value="">Seleccione...</option>
-              @foreach($tipos as $t)
-                <option value="{{ $t->id_tipo_donacion }}"
-                  {{ (string)old('id_tipo_donacion', $donacion->id_tipo_donacion) === (string)$t->id_tipo_donacion ? 'selected' : '' }}>
-                  {{ $t->nombre }}
-                </option>
-              @endforeach
-            </select>
-          </div>
 
-          <div class="col-md-2">
-            <label class="form-label">Unidades Recibidas</label>
-            {{-- ✅ id agregado para autocalculo --}}
-            <input id="unidades_entrega" type="number" name="unidades_entrega" class="form-control" min="0"
-                   value="{{ old('unidades_entrega', $donacion->unidades_entrega) }}">
-          </div>
+
+          <input type="hidden" id="unidades_entrega" name="unidades_entrega" value="{{ old('unidades_entrega', $donacion->unidades_entrega) }}">
 
           <div class="col-md-4">
             <label class="form-label">Persona que gestionó</label>
@@ -157,59 +119,18 @@
           </div>
         </div>
 
+        @include('donaciones._items')
+
         {{-- ================= COSTOS ================= --}}
         <hr class="my-4">
         <h6 class="text-primary mb-3">Costos y Mercado</h6>
 
         <div class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label">Precio mercado unidad</label>
-            {{-- Visible (formateado) --}}
-            <input
-              id="precio_mercado_unidad_display"
-              type="text"
-              class="form-control money-display"
-              inputmode="decimal"
-              placeholder="Q 0.00"
-              value="{{ old('precio_mercado_unidad', $donacion->precio_mercado_unidad) }}"
-            >
-            {{-- Real (numérico limpio) --}}
-            <input
-              id="precio_mercado_unidad"
-              type="hidden"
-              name="precio_mercado_unidad"
-              value="{{ old('precio_mercado_unidad', $donacion->precio_mercado_unidad) }}"
-            >
-          </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Total</label>
-            {{-- Visible (formateado) --}}
-            <input
-              id="total_mercado_display"
-              type="text"
-              class="form-control"
-              readonly
-              tabindex="-1"
-              placeholder="Q 0.00"
-              value="{{ old('total_mercado', $donacion->total_mercado) }}"
-            >
-            {{-- Real (numérico limpio) --}}
-            <input
-              id="total_mercado"
-              type="hidden"
-              name="total_mercado"
-              value="{{ old('total_mercado', $donacion->total_mercado) }}"
-            >
-            {{-- ✅ texto corregido --}}
-            <div class="form-text">Se calcula automáticamente: Precio mercado unidad × Unidades entrega.</div>
-          </div>
 
-          <div class="col-md-4">
-            <label class="form-label">Referencia del mercado</label>
-            <input type="text" name="referencia_mercado" class="form-control"
-                   value="{{ old('referencia_mercado', $donacion->referencia_mercado) }}">
-          </div>
+
+
+
 
           <div class="col-md-3">
             <label class="form-label">Costo logística</label>
@@ -239,21 +160,10 @@
 
         {{-- ================= PROYECTO / IMPACTO ================= --}}
         <hr class="my-4">
-        <h6 class="text-primary mb-3">Proyecto e Impacto</h6>
+        <h6 class="text-primary mb-3">Impacto</h6>
 
         <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Proyecto asignado</label>
-            <select name="id_proyecto" class="form-select">
-              <option value="">Seleccione...</option>
-              @foreach($proyectos as $p)
-                <option value="{{ $p->id_proyecto }}"
-                  {{ (string)old('id_proyecto', $donacion->id_proyecto) === (string)$p->id_proyecto ? 'selected' : '' }}>
-                  {{ $p->nombre }}
-                </option>
-              @endforeach
-            </select>
-          </div>
+
 
           <div class="col-md-3">
             <label class="form-label">Impacto (personas)</label>
@@ -283,16 +193,17 @@
         </div>
 
         <div class="row g-3 mt-1">
-          <div class="col-md-6">
+          <div class="col-md-6" data-recibo-condicional @if((string) old('recibo_empresa', $donacion->recibo_empresa ?? '') !== '1') hidden @endif>
             <label class="form-label">No. Referencia OSSHP</label>
             <input type="text" name="ref_osshp" class="form-control"
                    value="{{ old('ref_osshp', $donacion->ref_osshp) }}">
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-6" data-recibo-condicional @if((string) old('recibo_empresa', $donacion->recibo_empresa ?? '') !== '1') hidden @endif>
             <label class="form-label">Fecha referencia OSSHP</label>
             <input type="date" name="fecha_ref_osshp" class="form-control"
                    value="{{ old('fecha_ref_osshp', $donacion->fecha_ref_osshp) }}">
+            @include('donaciones._cargar_documentos', ['tipoDocumento' => 'osshp'])
           </div>
 
           <div class="col-md-6">
@@ -301,10 +212,11 @@
                    value="{{ old('ref_sat', $donacion->ref_sat) }}">
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-6" data-recibo-condicional @if((string) old('recibo_empresa', $donacion->recibo_empresa ?? '') !== '1') hidden @endif>
             <label class="form-label">Fecha referencia SAT</label>
             <input type="date" name="fecha_ref_sat" class="form-control"
                    value="{{ old('fecha_ref_sat', $donacion->fecha_ref_sat) }}">
+            @include('donaciones._cargar_documentos', ['tipoDocumento' => 'sat'])
           </div>
         </div>
 
@@ -370,59 +282,18 @@
     });
   }
 
-  function recalcTotal() {
-    // ✅ aquí cambia: usamos unidades_entrega (no unidades)
-    const unidadesEl = document.getElementById('unidades_entrega');
-    const precioHidden = document.getElementById('precio_mercado_unidad');
-    const totalHidden  = document.getElementById('total_mercado');
-    const totalDisplay = document.getElementById('total_mercado_display');
 
-    if (!unidadesEl || !precioHidden || !totalHidden || !totalDisplay) return;
-
-    const unidades = parseMoney(unidadesEl.value);
-    const precio   = parseMoney(precioHidden.value);
-    const total    = (unidades * precio);
-
-    totalHidden.value = String(total);
-    totalDisplay.value = formatGTQ(total);
-  }
 
   // Bind de campos moneda
-  bindMoneyPair(
-    document.getElementById('valor_total_donacion_display'),
-    document.getElementById('valor_total_donacion')
-  );
-  bindMoneyPair(
-    document.getElementById('precio_mercado_unidad_display'),
-    document.getElementById('precio_mercado_unidad')
-  );
+
+
   bindMoneyPair(
     document.getElementById('costo_logistica_display'),
     document.getElementById('costo_logistica')
   );
 
-  // Inicializa Total con formato y autocalcula
-  (function initTotal() {
-    const totalHidden  = document.getElementById('total_mercado');
-    const totalDisplay = document.getElementById('total_mercado_display');
-    if (totalHidden && totalDisplay) {
-      totalDisplay.value = formatGTQ(parseMoney(totalHidden.value || totalDisplay.value));
-    }
-    recalcTotal();
-  })();
 
-  // ✅ Recalcular cuando cambie unidades_entrega o precio
-  const unidadesEntregaEl = document.getElementById('unidades_entrega');
-  const precioDisplay = document.getElementById('precio_mercado_unidad_display');
-
-  if (unidadesEntregaEl) {
-    unidadesEntregaEl.addEventListener('input', recalcTotal);
-    unidadesEntregaEl.addEventListener('blur', recalcTotal);
-  }
-  if (precioDisplay) {
-    precioDisplay.addEventListener('input', recalcTotal);
-    precioDisplay.addEventListener('blur', recalcTotal);
-  }
 })();
 </script>
+@include('donaciones._estado_recibo')
 @endsection

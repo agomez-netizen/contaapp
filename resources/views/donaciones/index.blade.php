@@ -1,245 +1,408 @@
- @extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
+@if(request('tipo') || request('proyecto'))
+<div class="container pt-3"><div class="alert alert-info mb-0">Los montos corresponden únicamente a los ítems que coinciden con el tipo y/o proyecto seleccionado. Cada recibo y su impacto se cuentan una sola vez; el detalle muestra el recibo completo.</div></div>
+@endif
 
 <style>
+
 /* ===== TOGGLE PERSONALIZADO ===== */
+
 .switch {
+
   position: relative;
+
   display: inline-block;
+
   width: 44px;
+
   height: 24px;
+
 }
 
 .switch input {
+
   display: none;
+
 }
 
 .slider {
+
   position: absolute;
+
   inset: 0;
+
   cursor: pointer;
+
   background-color: #d1d5db;
+
   border-radius: 999px;
+
   transition: .2s;
+
 }
 
 .slider:before {
+
   content: "";
+
   position: absolute;
+
   height: 18px;
+
   width: 18px;
+
   left: 3px;
+
   top: 3px;
+
   background-color: #fff;
+
   border-radius: 50%;
+
   transition: .2s;
+
   box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+
 }
 
 .switch input:checked + .slider {
+
   background-color: #0d6efd;
+
 }
 
 .switch input:checked + .slider:before {
+
   transform: translateX(20px);
+
 }
 
 .switch input:disabled + .slider {
+
   cursor: not-allowed;
+
   opacity: .55;
+
   background-color: #6c757d;
+
 }
 
 tr.js-row:hover {
+
   background-color: #f8f9fa;
+
 }
+
 </style>
 
 @php
+
   $usuarioSesion = session('user');
+
+  $rolActual = strtoupper(trim(
+      $usuarioSesion['rol'] ?? $usuarioSesion['nombre_rol'] ?? ''
+  ));
+
+  $soloLectura = $rolActual === 'PROYECTOS';
 
   $usuarioActualId = (int) ($usuarioSesion['id_usuario'] ?? 0);
 
   /*
+
    * Usuarios autorizados para desbloquear registros.
+
    * Cambia los ID si Nancy o Aníbal tienen otros valores.
+
    */
+
   $usuariosAutorizadosParaDesbloquear = [2, 3];
+
   //$usuariosAutorizadosParaDesbloquear = [1, 2];
+
   $puedeDesbloquear = in_array(
+
       $usuarioActualId,
+
       $usuariosAutorizadosParaDesbloquear,
+
       true
+
   );
+
 @endphp
 
 <div class="container py-3">
 
   {{-- HEADER --}}
+
   <div class="d-flex justify-content-between align-items-center mb-3">
+
     <div>
+
       <h4 class="mb-0">Donaciones Registradas</h4>
+
       <small class="text-muted">Control Interno AAPOS</small>
+
     </div>
 
     <div class="d-flex gap-2">
 
+      @if(!$soloLectura)
+
       <a href="{{ route('donaciones.export.excel', request()->query()) }}"
+
          class="btn btn-outline-success">
+
         📗 Exportar Excel
+
       </a>
 
       <a href="{{ route('donaciones.export.pdf', request()->query()) }}"
+
          class="btn btn-outline-danger">
+
         📄 Exportar PDF
+
       </a>
 
       <a href="{{ route('donaciones.create') }}"
+
          class="btn btn-primary">
+
         ✚ Nueva Donación
+
       </a>
 
+      @endif
+
     </div>
+
   </div>
 
 
+
 {{-- FILTROS --}}
+
 <div class="card shadow-sm mb-3">
+
   <div class="card-body">
 
     <form method="GET"
+
           action="{{ route('donaciones.index') }}"
+
           class="row g-3 align-items-end">
 
       {{-- BÚSQUEDA --}}
+
       <div class="col-lg-4 col-md-6">
+
         <label for="q" class="form-label">
+
           Buscar
+
         </label>
 
         <input type="text"
+
                name="q"
+
                id="q"
+
                class="form-control"
+
                value="{{ $q }}"
+
                placeholder="Empresa, NIT, contacto o referencia">
+
       </div>
 
       {{-- FECHA DESDE --}}
+
       <div class="col-lg-2 col-md-3">
+
         <label for="from" class="form-label">
+
           Desde
+
         </label>
 
         <input type="date"
+
                name="from"
+
                id="from"
+
                class="form-control"
+
                value="{{ $from }}">
+
       </div>
 
       {{-- FECHA HASTA --}}
+
       <div class="col-lg-2 col-md-3">
+
         <label for="to" class="form-label">
+
           Hasta
+
         </label>
 
         <input type="date"
+
                name="to"
+
                id="to"
+
                class="form-control"
+
                value="{{ $to }}">
+
       </div>
 
       {{-- TIPO DE DONACIÓN --}}
+
       <div class="col-lg-2 col-md-6">
+
         <label for="tipo" class="form-label">
+
           Tipo
+
         </label>
 
         <select name="tipo"
+
                 id="tipo"
+
                 class="form-select">
 
           <option value="">Todos</option>
 
           @foreach($tipos as $item)
+
             <option value="{{ $item->id_tipo_donacion }}"
+
               @selected((string) $tipo === (string) $item->id_tipo_donacion)>
+
               {{ $item->nombre }}
+
             </option>
+
           @endforeach
 
         </select>
+
       </div>
 
       {{-- PROYECTO --}}
+
       <div class="col-lg-2 col-md-6">
+
         <label for="proyecto" class="form-label">
+
           Proyecto
+
         </label>
 
         <select name="proyecto"
+
                 id="proyecto"
+
                 class="form-select">
 
           <option value="">Todos</option>
 
           @foreach($proyectos as $item)
+
             <option value="{{ $item->id_proyecto }}"
+
               @selected((string) $proyecto === (string) $item->id_proyecto)>
+
               {{ $item->nombre }}
+
             </option>
+
           @endforeach
 
         </select>
+
       </div>
 
       {{-- BOTONES --}}
+
       <div class="col-12">
+
         <div class="d-flex gap-2">
 
           <button type="submit"
+
                   class="btn btn-primary">
+
             Filtrar
+
           </button>
 
           <a href="{{ route('donaciones.index') }}"
+
              class="btn btn-outline-secondary">
+
             Limpiar filtros
+
           </a>
 
         </div>
+
       </div>
 
     </form>
 
   </div>
+
 </div>
 
 
+
   {{-- TABLA --}}
+
   <div class="card shadow-sm">
+
     <div class="card-body table-responsive">
 
       <table class="table table-hover align-middle">
 
         <thead class="table-light">
+
           <tr>
+
             <th>#</th>
+
             <th>Fecha</th>
+
             <th>Empresa</th>
+
             <th>NIT</th>
+
             <th>Tipo</th>
+
             <th>Ubicación</th>
+
             <th>Proyecto</th>
+
             <th class="text-end">Valor</th>
+
             <th class="text-end">Impacto</th>
+
             <th>Registró</th>
+
             <th class="text-center">Bloqueo</th>
+
             <th class="text-center">Acciones</th>
+
           </tr>
+
         </thead>
 
         <tbody>
@@ -247,24 +410,35 @@ tr.js-row:hover {
         @forelse($donaciones as $d)
 
           @php
+
             $estaBloqueado = (int) $d->bloqueado === 1;
 
             /*
+
              * Cualquier usuario puede bloquear un registro activo.
+
              * Solo Nancy y Aníbal pueden desbloquear un registro bloqueado.
+
              */
+
             $toggleDeshabilitado =
+
                 $estaBloqueado && !$puedeDesbloquear;
+
           @endphp
 
           <tr class="js-row"
+
               data-href="{{ route('donaciones.show', $d->id_donacion) }}"
+
               style="cursor:pointer">
 
             <td>{{ $loop->iteration }}</td>
 
             <td>
+
               {{ \Carbon\Carbon::parse($d->fecha_despachada)->format('d/m/Y') }}
+
             </td>
 
             <td>{{ $d->empresa }}</td>
@@ -272,105 +446,159 @@ tr.js-row:hover {
             <td>{{ $d->nit }}</td>
 
             <td>
+
               <span class="badge bg-primary">
+
                 {{ $d->tipo_donacion }}
+
               </span>
+
             </td>
 
             <td>
+
               <span class="badge bg-success">
+
                 {{ $d->ubicacion }}
+
               </span>
+
             </td>
 
             <td>{{ $d->proyecto }}</td>
 
             <td class="text-end">
+
               Q {{ number_format($d->valor_total_donacion, 2) }}
+
             </td>
 
             <td class="text-end">
+
               {{ number_format($d->impacto_personas) }}
+
             </td>
 
             <td>{{ $d->usuario }}</td>
 
             {{-- TOGGLE --}}
+
             <td class="text-center"
+
                 onclick="event.stopPropagation();">
 
               <div class="d-flex justify-content-center align-items-center gap-2">
 
+                @if(!$soloLectura)
+
                 <label class="switch"
+
                        title="{{ $toggleDeshabilitado
+
                           ? 'Solo Nancy o Aníbal pueden desbloquear este registro'
+
                           : ($estaBloqueado
+
                               ? 'Desbloquear registro'
+
                               : 'Bloquear registro') }}">
 
                   <input type="checkbox"
+
                          class="js-toggle-bloqueo"
+
                          data-id="{{ $d->id_donacion }}"
+
                          data-estado-anterior="{{ $estaBloqueado ? 1 : 0 }}"
+
                          @checked($estaBloqueado)
+
                          @disabled($toggleDeshabilitado)>
 
                   <span class="slider"></span>
+
                 </label>
 
+                @endif
+
                 <small class="text-muted">
+
                   {{ $estaBloqueado ? 'Bloqueado' : 'Activo' }}
+
                 </small>
 
               </div>
+
             </td>
 
             {{-- ACCIONES --}}
+
             <td class="text-center"
+
                 onclick="event.stopPropagation();">
 
               <div class="d-flex justify-content-center gap-1">
 
                 <a href="{{ route('donaciones.pdf', $d->id_donacion) }}"
+
                    class="btn btn-outline-secondary btn-sm"
+
                    target="_blank"
+
                    title="Ver PDF">
+
                   📄
+
                 </a>
 
-                @if(!$estaBloqueado)
+                @if(!$soloLectura && !$estaBloqueado)
 
                   <a href="{{ route('donaciones.edit', $d->id_donacion) }}"
+
                      class="btn btn-outline-primary btn-sm"
+
                      title="Editar">
+
                     ✏️
+
                   </a>
 
                   <form method="POST"
+
                         action="{{ route('donaciones.destroy', $d->id_donacion) }}"
+
                         onsubmit="return confirm('¿Eliminar esta donación?');">
 
                     @csrf
+
                     @method('DELETE')
 
                     <button type="submit"
+
                             class="btn btn-outline-danger btn-sm"
+
                             title="Eliminar">
+
                       🗑️
+
                     </button>
 
                   </form>
 
-                @else
+                @elseif($estaBloqueado)
 
                   <span class="badge bg-secondary"
+
                         title="El registro está bloqueado">
+
                     🔒
+
                   </span>
 
                 @endif
 
               </div>
+
             </td>
 
           </tr>
@@ -378,45 +606,67 @@ tr.js-row:hover {
         @empty
 
           <tr>
+
             <td colspan="12"
+
                 class="text-center text-muted py-4">
+
               No hay registros
+
             </td>
+
           </tr>
 
         @endforelse
 
         </tbody>
+
       </table>
 
       {{ $donaciones->links() }}
 
     </div>
+
   </div>
+
 </div>
 
 {{-- CLICK EN FILA --}}
+
 <script>
+
 document.querySelectorAll('tr.js-row').forEach(row => {
+
   row.addEventListener('click', () => {
+
     window.location.href = row.dataset.href;
+
   });
+
 });
+
 </script>
 
 {{-- CAMBIAR BLOQUEO --}}
+
 <script>
+
 document.querySelectorAll('.js-toggle-bloqueo').forEach(checkbox => {
 
   checkbox.addEventListener('change', async function () {
 
     const elemento = this;
+
     const id = elemento.dataset.id;
 
     /*
+
      * Si estaba marcado, el estado anterior era bloqueado.
+
      * Si estaba desmarcado, el estado anterior era activo.
+
      */
+
     const estadoAnterior = elemento.dataset.estadoAnterior === '1';
 
     elemento.disabled = true;
@@ -424,29 +674,47 @@ document.querySelectorAll('.js-toggle-bloqueo').forEach(checkbox => {
     try {
 
       const respuesta = await fetch(
+
         `/donaciones/${id}/toggle-bloqueo`,
+
         {
+
           method: 'POST',
+
           headers: {
+
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+
             'Accept': 'application/json',
+
             'Content-Type': 'application/json'
+
           }
+
         }
+
       );
 
       let datos = {};
 
       try {
+
         datos = await respuesta.json();
+
       } catch (error) {
+
         datos = {};
+
       }
 
       if (!respuesta.ok) {
+
         throw new Error(
+
           datos.message || 'No fue posible cambiar el estado del registro.'
+
         );
+
       }
 
       window.location.reload();
@@ -454,6 +722,7 @@ document.querySelectorAll('.js-toggle-bloqueo').forEach(checkbox => {
     } catch (error) {
 
       elemento.checked = estadoAnterior;
+
       elemento.disabled = false;
 
       alert(error.message);
@@ -463,6 +732,7 @@ document.querySelectorAll('.js-toggle-bloqueo').forEach(checkbox => {
   });
 
 });
+
 </script>
 
 @endsection

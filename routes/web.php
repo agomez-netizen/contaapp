@@ -59,7 +59,6 @@ Route::middleware(['auth.custom'])->group(function () {
     // =========================
     Route::middleware(['role:ADMIN,GESTOR,DONACIONES,SECRETARIA,OPERADOR'])->group(function () {
 
-        Route::get('/donaciones/index', [DonacionController::class, 'index'])->name('donaciones.index');
         Route::get('/donaciones/crear', [DonacionController::class, 'create'])->name('donaciones.create');
         Route::post('/donaciones', [DonacionController::class, 'store'])->name('donaciones.store');
 
@@ -67,7 +66,6 @@ Route::middleware(['auth.custom'])->group(function () {
         Route::put('/donaciones/{id}', [DonacionController::class, 'update'])->name('donaciones.update');
         Route::delete('/donaciones/{id}', [DonacionController::class, 'destroy'])->name('donaciones.destroy');
 
-        Route::get('/donaciones/{id}', [DonacionController::class, 'show'])->name('donaciones.show');
 
         Route::get('/donaciones/export/excel', [DonacionController::class, 'exportExcel'])
             ->name('donaciones.export.excel');
@@ -99,6 +97,23 @@ Route::middleware(['auth.custom'])->group(function () {
 
         Schedule::command('bloquear:donaciones-mensuales')->dailyAt('23:59');
     });
+
+    // DONACIONES: acceso de consulta para PROYECTOS.
+    // Las rutas de escritura conservan sus permisos originales.
+    Route::middleware(['role:ADMIN,GESTOR,DONACIONES,SECRETARIA,OPERADOR,PROYECTOS'])->group(function () {
+        Route::get('/donaciones/index', [DonacionController::class, 'index'])->name('donaciones.index');
+        Route::get('/donaciones/{id}', [DonacionController::class, 'show'])->name('donaciones.show');
+
+        Route::get('/donaciones/export/excel', [DonacionController::class, 'exportExcel'])
+            ->name('donaciones.export.excel');
+
+        Route::get('/donaciones/export/pdf', [DonacionController::class, 'exportPdf'])
+            ->name('donaciones.export.pdf');
+
+
+        Route::get('/donaciones/{id}/pdf', [DonacionController::class, 'pdf'])->name('donaciones.pdf');
+
+        });
 
     // =========================
     // RIFA (ADMIN + RIFA)

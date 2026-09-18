@@ -85,6 +85,8 @@
   </div>
 
 
+  @include('donaciones._detalle_items')
+
   <table class="sign">
     <tr>
       <td style="border:none; width:50%; padding-top:20px;">

@@ -54,4 +54,8 @@ class Donacion extends Model
     {
         return $this->belongsTo(Usuario::class, 'id_usuario', 'id_usuario');
     }
+    public function detalles()
+    {
+        return $this->hasMany(DonacionDetalle::class, 'id_donacion', 'id_donacion');
+    }
 }

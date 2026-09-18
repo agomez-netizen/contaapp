@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Support\ReporteDonaciones;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -17,7 +18,7 @@ class DashboardController extends Controller
         $tipo     = $request->get('tipo');      // id_tipo_donacion
         $proyecto = $request->get('proyecto');  // id_proyecto
 
-        $base = DB::table('donaciones as d')
+        $base = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'd.id_usuario')
             ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'd.id_ubicacion')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
@@ -37,59 +38,29 @@ class DashboardController extends Controller
 
         if ($from) $base->whereDate('d.fecha_despachada', '>=', $from);
         if ($to) $base->whereDate('d.fecha_despachada', '<=', $to);
-        if ($tipo) $base->where('d.id_tipo_donacion', $tipo);
-        if ($proyecto) $base->where('d.id_proyecto', $proyecto);
+
+
 
         // ===== STATS PARA CARDS (respetan filtros) =====
         $stats = (clone $base)
             ->selectRaw('
                 COUNT(DISTINCT d.id_donacion) AS total_donaciones,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total_dinero,
+                COALESCE(SUM(CAST(COALESCE(dm.monto, d.valor_total_donacion) AS DECIMAL(12,2))), 0) AS total_dinero,
                 COALESCE(SUM(CAST(d.impacto_personas AS UNSIGNED)), 0) AS total_impacto
             ')
             ->first();
 
         // ===== TABLA RESUMEN POR TIPO (respetan filtros) =====
-        $resumenTipos = (clone $base)
-            ->whereNotNull('td.nombre')
-            ->whereNotNull('d.valor_total_donacion')
-            ->whereRaw("CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0")
-            ->groupBy('d.id_tipo_donacion', 'td.nombre')
-            ->selectRaw("
-                td.nombre AS tipo,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total
-            ")
-            ->orderByDesc('total')
-            ->get();
+        $resumenTipos = ReporteDonaciones::resumen($base, $tipo, $proyecto);
 
         $totalGeneralTipos = $resumenTipos->sum('total');
 
         // ===== GRÁFICAS (respetan filtros) =====
         // Por Tipo
-        $porTipo = (clone $base)
-            ->whereNotNull('td.nombre')
-            ->whereNotNull('d.valor_total_donacion')
-            ->whereRaw("CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0")
-            ->groupBy('d.id_tipo_donacion', 'td.nombre')
-            ->selectRaw("
-                td.nombre AS label,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total
-            ")
-            ->orderByDesc('total')
-            ->get();
+        $porTipo = $resumenTipos->map(fn ($r) => (object) ['label' => $r->tipo, 'total' => $r->total]);
 
         // Por Proyecto (excluimos null -> adiós NaN% y adiós 'null' en leyenda)
-        $porProyecto = (clone $base)
-            ->whereNotNull('p.nombre')
-            ->whereNotNull('d.valor_total_donacion')
-            ->whereRaw("CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0")
-            ->groupBy('d.id_proyecto', 'p.nombre')
-            ->selectRaw("
-                p.nombre AS label,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total
-            ")
-            ->orderByDesc('total')
-            ->get();
+        $porProyecto = ReporteDonaciones::porProyecto($base, $tipo, $proyecto);
 
 
         // ===== AVANCES POR PROYECTO =====
@@ -111,10 +82,10 @@ class DashboardController extends Controller
                 'd.empresa',
                 'd.nit',
                 'd.contacto',
-                'd.valor_total_donacion',
+                DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as valor_total_donacion"),
                 'ub.nombre as ubicacion',
-                'td.nombre as tipo_donacion',
-                'p.nombre as proyecto',
+                DB::raw("COALESCE(dm.tipos, td.nombre, 'Sin clasificar') as tipo_donacion"),
+                DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') as proyecto"),
                 'd.impacto_personas',
                 DB::raw("CONCAT(u.nombre,' ',u.apellido) as usuario"),
                 'd.created_at'
@@ -151,6 +122,10 @@ class DashboardController extends Controller
     public function exportExcel(Request $request)
     {
         $rows = $this->buildExportQueryAll($request)->get();
+        $rows->each(function ($row) {
+            $row->valor_total_donacion = $row->monto_reporte;
+            unset($row->monto_reporte);
+        });
 
         if ($rows->isEmpty()) {
             return back()->with('error', 'No hay datos para exportar.');
@@ -180,6 +155,8 @@ class DashboardController extends Controller
         $pdf = Pdf::loadView('exports.donaciones_pdf', [
             'donaciones' => $donaciones,
             'filtros' => $request->query(),
+            'totalGeneral' => $donaciones->sum('valor_total_donacion'),
+            'totalImpacto' => $donaciones->sum('impacto_personas'),
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('donaciones_' . now()->format('Ymd_His') . '.pdf');
@@ -196,7 +173,7 @@ class DashboardController extends Controller
         $tipo     = $request->get('tipo');
         $proyecto = $request->get('proyecto');
 
-        $base = DB::table('donaciones as d')
+        $base = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'd.id_usuario')
             ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'd.id_ubicacion')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
@@ -215,8 +192,8 @@ class DashboardController extends Controller
 
         if ($from) $base->whereDate('d.fecha_despachada', '>=', $from);
         if ($to) $base->whereDate('d.fecha_despachada', '<=', $to);
-        if ($tipo) $base->where('d.id_tipo_donacion', $tipo);
-        if ($proyecto) $base->where('d.id_proyecto', $proyecto);
+
+
 
         return $base->select(
             'd.id_donacion',
@@ -224,10 +201,10 @@ class DashboardController extends Controller
             'd.empresa',
             'd.nit',
             'd.contacto',
-            'd.valor_total_donacion',
+            DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as valor_total_donacion"),
             'ub.nombre as ubicacion',
-            'td.nombre as tipo_donacion',
-            'p.nombre as proyecto',
+            DB::raw("COALESCE(dm.tipos, td.nombre, 'Sin clasificar') as tipo_donacion"),
+            DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') as proyecto"),
             'd.impacto_personas',
             DB::raw("CONCAT(u.nombre,' ',u.apellido) as usuario")
         )->orderByDesc('d.id_donacion');
@@ -245,7 +222,7 @@ class DashboardController extends Controller
         $tipo     = $request->get('tipo');
         $proyecto = $request->get('proyecto');
 
-        $base = DB::table('donaciones as d')
+        $base = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'd.id_usuario')
             ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'd.id_ubicacion')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
@@ -264,15 +241,16 @@ class DashboardController extends Controller
 
         if ($from) $base->whereDate('d.fecha_despachada', '>=', $from);
         if ($to) $base->whereDate('d.fecha_despachada', '<=', $to);
-        if ($tipo) $base->where('d.id_tipo_donacion', $tipo);
-        if ($proyecto) $base->where('d.id_proyecto', $proyecto);
+
+
 
         return $base->select([
                 'd.*',
+                DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as monto_reporte"),
                 DB::raw("CONCAT(u.nombre,' ',u.apellido) AS usuario_nombre"),
                 'ub.nombre AS ubicacion_nombre',
-                'td.nombre AS tipo_donacion_nombre',
-                'p.nombre AS proyecto_nombre',
+                DB::raw("COALESCE(dm.tipos, td.nombre, 'Sin clasificar') AS tipo_donacion_nombre"),
+                DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') AS proyecto_nombre"),
             ])
             ->orderByDesc('d.id_donacion');
     }
@@ -289,14 +267,14 @@ class DashboardController extends Controller
         $tipo     = $request->get('tipo');
         $proyecto = $request->get('proyecto');
 
-        $rows = DB::table('donaciones as d')
+        $rows = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('proyectos as p', 'p.id_proyecto', '=', 'd.id_proyecto')
             ->select([
                 'd.id_donacion as id',
                 'd.fecha_despachada as fecha',
                 'd.empresa as empresa',
-                'p.nombre as proyecto',
-                'd.valor_total_donacion as valor',
+                DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') as proyecto"),
+                DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as valor"),
                 'd.impacto_personas as impacto',
             ])
             ->when($q !== '', function ($qq) use ($q) {
@@ -311,9 +289,7 @@ class DashboardController extends Controller
             })
             ->when($from, fn($qq) => $qq->whereDate('d.fecha_despachada', '>=', $from))
             ->when($to, fn($qq) => $qq->whereDate('d.fecha_despachada', '<=', $to))
-            ->when($tipo, fn($qq) => $qq->where('d.id_tipo_donacion', $tipo))
-            ->when($proyecto, fn($qq) => $qq->where('d.id_proyecto', $proyecto))
-            ->whereNotNull('d.valor_total_donacion')
+            ->whereRaw("COALESCE(dm.monto, d.valor_total_donacion) IS NOT NULL")
             ->whereNotNull('d.impacto_personas')
             ->orderByDesc('d.id_donacion')
             ->limit(800)
@@ -344,7 +320,7 @@ class DashboardController extends Controller
     $tipo     = $request->get('tipo');
     $proyecto = $request->get('proyecto');
 
-    $base = DB::table('donaciones as d')
+    $base = ReporteDonaciones::base($tipo, $proyecto)
         ->leftJoin(
             'tipos_donacion as td',
             'td.id_tipo_donacion',
@@ -378,19 +354,15 @@ class DashboardController extends Controller
         $base->whereDate('d.fecha_despachada', '<=', $to);
     }
 
-    if ($tipo) {
-        $base->where('d.id_tipo_donacion', $tipo);
-    }
 
-    if ($proyecto) {
-        $base->where('d.id_proyecto', $proyecto);
-    }
+
+
 
     $stats = (clone $base)
         ->selectRaw('
             COUNT(DISTINCT d.id_donacion) AS total_donaciones,
             COALESCE(
-                SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))),
+                SUM(CAST(COALESCE(dm.monto, d.valor_total_donacion) AS DECIMAL(12,2))),
                 0
             ) AS total_dinero,
             COALESCE(
@@ -400,22 +372,7 @@ class DashboardController extends Controller
         ')
         ->first();
 
-    $resumenTipos = (clone $base)
-        ->whereNotNull('td.nombre')
-        ->whereNotNull('d.valor_total_donacion')
-        ->whereRaw(
-            'CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0'
-        )
-        ->groupBy('d.id_tipo_donacion', 'td.nombre')
-        ->selectRaw('
-            td.nombre AS tipo,
-            COALESCE(
-                SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))),
-                0
-            ) AS total
-        ')
-        ->orderByDesc('total')
-        ->get();
+    $resumenTipos = ReporteDonaciones::resumen($base, $tipo, $proyecto);
 
     $totalGeneralTipos = $resumenTipos->sum('total');
 

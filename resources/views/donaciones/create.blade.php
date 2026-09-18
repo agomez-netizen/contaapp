@@ -29,8 +29,13 @@
     </div>
 
     <div class="card-body">
-      <form method="POST" action="{{ route('donaciones.store') }}">
+      <form enctype="multipart/form-data" method="POST" action="{{ route('donaciones.store') }}">
         @csrf
+        @if ($errors->any())
+          <div class="alert alert-danger"><ul class="mb-0">
+            @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+          </ul></div>
+        @endif
 
         {{-- ================= DATOS PRINCIPALES ================= --}}
         <h6 class="text-success mb-3">Datos de la Donación</h6>
@@ -78,12 +83,7 @@
             @error('correo') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Unidades</label>
-            <input type="number" name="unidades" class="form-control @error('unidades') is-invalid @enderror" min="0"
-                   value="{{ old('unidades') }}">
-            @error('unidades') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+          <input type="hidden" id="unidades" name="unidades" value="{{ old('unidades') }}">
 
           <div class="col-md-6">
             <label class="form-label">Descripción</label>
@@ -91,13 +91,7 @@
             @error('descripcion') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Valor total donación</label>
-            <input type="number" step="0.01" name="valor_total_donacion"
-                   class="form-control @error('valor_total_donacion') is-invalid @enderror" min="0"
-                   value="{{ old('valor_total_donacion') }}">
-            @error('valor_total_donacion') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+          <input type="hidden" id="valor_total_donacion" name="valor_total_donacion" value="{{ old('valor_total_donacion') }}">
         </div>
 
         {{-- ================= ENTREGA ================= --}}
@@ -132,25 +126,9 @@
             @error('quien_recibe') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Tipo de donación</label>
-            <select name="id_tipo_donacion" class="form-select @error('id_tipo_donacion') is-invalid @enderror">
-              <option value="" disabled {{ old('id_tipo_donacion') ? '' : 'selected' }}>Seleccione...</option>
-              @foreach(($tipos ?? []) as $t)
-                <option value="{{ $t->id_tipo_donacion }}" {{ (string)old('id_tipo_donacion') === (string)$t->id_tipo_donacion ? 'selected' : '' }}>
-                  {{ $t->nombre }}
-                </option>
-              @endforeach
-            </select>
-            @error('id_tipo_donacion') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
 
-          <div class="col-md-2">
-            <label class="form-label">Unidades</label>
-            <input type="number" name="unidades_entrega" class="form-control @error('unidades_entrega') is-invalid @enderror" min="0"
-                   value="{{ old('unidades_entrega') }}">
-            @error('unidades_entrega') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+
+          <input type="hidden" id="unidades_entrega" name="unidades_entrega" value="{{ old('unidades_entrega') }}">
 
           <div class="col-md-4">
             <label class="form-label">Persona que gestionó</label>
@@ -160,33 +138,18 @@
           </div>
         </div>
 
+        @include('donaciones._items')
+
         {{-- ================= COSTOS ================= --}}
         <hr class="my-4">
         <h6 class="text-success mb-3">Costos y Mercado</h6>
 
         <div class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label">Precio mercado unidad</label>
-            <input type="number" step="0.01" name="precio_mercado_unidad"
-                   class="form-control @error('precio_mercado_unidad') is-invalid @enderror" min="0"
-                   value="{{ old('precio_mercado_unidad') }}">
-            @error('precio_mercado_unidad') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Total</label>
-            <input type="number" step="0.01" name="total_mercado"
-                   class="form-control @error('total_mercado') is-invalid @enderror" min="0"
-                   value="{{ old('total_mercado') }}">
-            @error('total_mercado') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
 
-          <div class="col-md-4">
-            <label class="form-label">Referencia del mercado</label>
-            <input type="text" name="referencia_mercado" class="form-control @error('referencia_mercado') is-invalid @enderror"
-                   value="{{ old('referencia_mercado') }}">
-            @error('referencia_mercado') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+
+
+
 
           <div class="col-md-3">
             <label class="form-label">Costo logística</label>
@@ -205,21 +168,10 @@
 
         {{-- ================= PROYECTO / IMPACTO ================= --}}
         <hr class="my-4">
-        <h6 class="text-success mb-3">Proyecto e Impacto</h6>
+        <h6 class="text-success mb-3">Impacto</h6>
 
         <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Proyecto asignado</label>
-            <select name="id_proyecto" class="form-select @error('id_proyecto') is-invalid @enderror">
-              <option value="" disabled {{ old('id_proyecto') ? '' : 'selected' }}>Seleccione...</option>
-              @foreach(($proyectos ?? []) as $p)
-                <option value="{{ $p->id_proyecto }}" {{ (string)old('id_proyecto') === (string)$p->id_proyecto ? 'selected' : '' }}>
-                  {{ $p->nombre }}
-                </option>
-              @endforeach
-            </select>
-            @error('id_proyecto') <div class="invalid-feedback">{{ $message }}</div> @enderror
-          </div>
+
 
           <div class="col-md-3">
             <label class="form-label">Impacto (personas)</label>
@@ -252,18 +204,19 @@
         </div>
 
         <div class="row g-3 mt-1">
-          <div class="col-md-6">
+          <div class="col-md-6" data-recibo-condicional @if((string) old('recibo_empresa', $donacion->recibo_empresa ?? '') !== '1') hidden @endif>
             <label class="form-label">No. Referencia OSSHP</label>
             <input type="text" name="ref_osshp" class="form-control @error('ref_osshp') is-invalid @enderror"
                    value="{{ old('ref_osshp') }}">
             @error('ref_osshp') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-6" data-recibo-condicional @if((string) old('recibo_empresa', $donacion->recibo_empresa ?? '') !== '1') hidden @endif>
             <label class="form-label">Fecha referencia OSSHP</label>
             <input type="date" name="fecha_ref_osshp" class="form-control @error('fecha_ref_osshp') is-invalid @enderror"
                    value="{{ old('fecha_ref_osshp') }}">
             @error('fecha_ref_osshp') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            @include('donaciones._cargar_documentos', ['tipoDocumento' => 'osshp'])
           </div>
 
           <div class="col-md-6">
@@ -273,11 +226,12 @@
             @error('ref_sat') <div class="invalid-feedback">{{ $message }}</div> @enderror
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-6" data-recibo-condicional @if((string) old('recibo_empresa', $donacion->recibo_empresa ?? '') !== '1') hidden @endif>
             <label class="form-label">Fecha referencia SAT</label>
             <input type="date" name="fecha_ref_sat" class="form-control @error('fecha_ref_sat') is-invalid @enderror"
                    value="{{ old('fecha_ref_sat') }}">
             @error('fecha_ref_sat') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            @include('donaciones._cargar_documentos', ['tipoDocumento' => 'sat'])
           </div>
         </div>
 
@@ -293,4 +247,5 @@
   </div>
 
 </div>
+@include('donaciones._estado_recibo')
 @endsection

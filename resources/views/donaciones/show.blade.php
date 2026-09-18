@@ -19,10 +19,16 @@
           ← Volver
         </a>
 
+        @php
+          $usuarioActual = session('user');
+          $rolActual = strtoupper(trim($usuarioActual['rol'] ?? $usuarioActual['nombre_rol'] ?? ''));
+        @endphp
+        @if(in_array($rolActual, ['ADMIN', 'GESTOR', 'DONACIONES', 'SECRETARIA'], true) && !(int) ($donacion->bloqueado ?? 0))
         <a href="{{ route('donaciones.edit', $donacion->id_donacion) }}"
            class="btn btn-sm btn-light">
           ✏️ Editar
         </a>
+        @endif
       </div>
     </div>
 
@@ -158,42 +164,19 @@
           </div>
         </div>
 
+        @include('donaciones._detalle_items')
+
         {{-- COSTOS --}}
         <div class="col-12 mt-3">
           <h6 class="text-primary mb-2">Costos y Mercado</h6>
           <hr class="mt-0">
         </div>
 
-        <div class="col-md-3">
-          <div class="text-muted small">Precio mercado unidad</div>
-          <div class="fw-semibold">
-            Q {{ number_format(
-                (float) ($donacion->precio_mercado_unidad ?? 0),
-                2,
-                '.',
-                ','
-            ) }}
-          </div>
-        </div>
 
-        <div class="col-md-3">
-          <div class="text-muted small">Total mercado</div>
-          <div class="fw-semibold">
-            Q {{ number_format(
-                (float) ($donacion->total_mercado ?? 0),
-                2,
-                '.',
-                ','
-            ) }}
-          </div>
-        </div>
 
-        <div class="col-md-4">
-          <div class="text-muted small">Referencia del mercado</div>
-          <div class="fw-semibold">
-            {{ $donacion->referencia_mercado ?? '—' }}
-          </div>
-        </div>
+
+
+
 
         <div class="col-md-3">
           <div class="text-muted small">Costo logística</div>
@@ -299,6 +282,8 @@
             }}
           </div>
         </div>
+
+        @include('donaciones._lista_documentos')
 
       </div>
 

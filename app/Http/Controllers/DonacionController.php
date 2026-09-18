@@ -7,6 +7,8 @@ use App\Models\Ubicacion;
 use App\Models\TipoDonacion;
 use App\Models\Proyecto;
 use Illuminate\Http\Request;
+use App\Support\ReporteDonaciones;
+use App\Support\DocumentosDonacion;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -15,6 +17,7 @@ class DonacionController extends Controller
 {
     public function create()
     {
+        abort_unless($this->puedeModificarDonaciones(), 403);
         $ubicaciones = Ubicacion::where('activo', 1)->orderBy('nombre')->get();
         $tipos = TipoDonacion::where('activo', 1)->orderBy('nombre')->get();
         $proyectos = Proyecto::where('activo', 1)->orderBy('nombre')->get();
@@ -29,7 +32,18 @@ class DonacionController extends Controller
             return redirect()->route('login')->with('error', 'Debes iniciar sesión.');
         }
 
+        abort_unless($this->puedeModificarDonaciones(), 403);
+        if ((string) $request->input('recibo_empresa') === '1') {
+            DocumentosDonacion::validar($request);
+        }
         $data = $request->validate([
+            'items' => ['required', 'array', 'min:1', 'max:100'],
+            'items.*' => ['required', 'array'],
+            'items.*.id_tipo_donacion' => ['required', 'integer', 'exists:tipos_donacion,id_tipo_donacion'],
+            'items.*.id_proyecto' => ['required', 'integer', 'exists:proyectos,id_proyecto'],
+            'items.*.descripcion' => ['nullable', 'string', 'max:5000'],
+            'items.*.unidades' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
+            'items.*.monto' => ['required', 'numeric', 'min:0', 'max:9999999999.99', 'regex:/^\d{1,10}(\.\d{1,2})?$/'],
             'fecha_despachada' => ['nullable', 'date'],
             'empresa' => ['nullable', 'string', 'max:180'],
             'nit' => ['nullable', 'string', 'max:50'],
@@ -37,32 +51,25 @@ class DonacionController extends Controller
             'telefono' => ['nullable', 'string', 'max:50'],
             'correo' => ['nullable', 'email', 'max:150'],
 
-            'unidades' => ['nullable', 'integer', 'min:0'],
             'descripcion' => ['nullable', 'string'],
-            'valor_total_donacion' => ['nullable', 'numeric', 'min:0'],
 
             'id_ubicacion' => ['nullable', 'integer'],
             'fecha_recibe' => ['nullable', 'date'],
             'quien_recibe' => ['nullable', 'string', 'max:120'],
             'id_tipo_donacion' => ['nullable', 'integer'],
-            'unidades_entrega' => ['nullable', 'integer', 'min:0'],
             'persona_gestiono' => ['nullable', 'string', 'max:120'],
 
-            'precio_mercado_unidad' => ['nullable', 'numeric', 'min:0'],
-            'total_mercado' => ['nullable', 'numeric', 'min:0'],
-            'referencia_mercado' => ['nullable', 'string', 'max:180'],
             'costo_logistica' => ['nullable', 'numeric', 'min:0'],
             'descripcion_logistica' => ['nullable', 'string'],
 
-            'id_proyecto' => ['nullable', 'integer'],
             'impacto_personas' => ['nullable', 'integer', 'min:0'],
             'comentarios' => ['nullable', 'string'],
 
             'recibo_empresa' => ['nullable', 'in:0,1'],
-            'ref_osshp' => ['nullable', 'string', 'max:80'],
-            'fecha_ref_osshp' => ['nullable', 'date'],
+            'ref_osshp' => ['exclude_unless:recibo_empresa,1', 'nullable', 'string', 'max:80'],
+            'fecha_ref_osshp' => ['exclude_unless:recibo_empresa,1', 'nullable', 'date'],
             'ref_sat' => ['nullable', 'string', 'max:80'],
-            'fecha_ref_sat' => ['nullable', 'date'],
+            'fecha_ref_sat' => ['exclude_unless:recibo_empresa,1', 'nullable', 'date'],
         ]);
 
         $data['id_usuario'] = $u['id_usuario'];
@@ -72,7 +79,21 @@ class DonacionController extends Controller
             $data['bloqueado'] = 0;
         }
 
-        Donacion::create($data);
+        $data['recibo_empresa'] = (string) $request->input('recibo_empresa') === '1' ? 1 : 0;
+        $items = $this->prepararItems($data);
+        $guardados = [];
+        try {
+            DB::transaction(function () use ($data, $items, $request, &$guardados) {
+                $donacion = Donacion::create($data);
+                $donacion->detalles()->createMany($items);
+                if ($data['recibo_empresa'] === 1) {
+                    DocumentosDonacion::guardar($donacion->id_donacion, $request, $guardados);
+                }
+            });
+        } catch (\Throwable $error) {
+            DocumentosDonacion::limpiar($guardados);
+            throw $error;
+        }
 
         return redirect()
             ->route('donaciones.index')
@@ -93,10 +114,17 @@ class DonacionController extends Controller
         }
 
         $ubicaciones = Ubicacion::where('activo', 1)->orderBy('nombre')->get();
-        $tipos = TipoDonacion::where('activo', 1)->orderBy('nombre')->get();
-        $proyectos = Proyecto::where('activo', 1)->orderBy('nombre')->get();
+        $tipos = TipoDonacion::where('activo', 1)
+            ->orWhereIn('id_tipo_donacion', $donacion->detalles()->pluck('id_tipo_donacion'))
+            ->orWhere('id_tipo_donacion', $donacion->id_tipo_donacion)
+            ->orderBy('nombre')->get();
+        $proyectos = Proyecto::where('activo', 1)
+            ->orWhereIn('id_proyecto', $donacion->detalles()->pluck('id_proyecto'))
+            ->orWhere('id_proyecto', $donacion->id_proyecto)
+            ->orderBy('nombre')->get();
 
-        return view('donaciones.edit', compact('donacion', 'ubicaciones', 'tipos', 'proyectos'));
+        $documentos = DocumentosDonacion::listar($id);
+        return view('donaciones.edit', compact('donacion', 'ubicaciones', 'tipos', 'proyectos', 'documentos'));
     }
 
     public function update(Request $request, $id)
@@ -112,7 +140,17 @@ class DonacionController extends Controller
             return back()->with('error', 'Este registro está bloqueado. No se puede modificar ni eliminar.');
         }
 
+        if ((string) $request->input('recibo_empresa') === '1') {
+            DocumentosDonacion::validar($request);
+        }
         $data = $request->validate([
+            'items' => ['required', 'array', 'min:1', 'max:100'],
+            'items.*' => ['required', 'array'],
+            'items.*.id_tipo_donacion' => ['required', 'integer', 'exists:tipos_donacion,id_tipo_donacion'],
+            'items.*.id_proyecto' => ['required', 'integer', 'exists:proyectos,id_proyecto'],
+            'items.*.descripcion' => ['nullable', 'string', 'max:5000'],
+            'items.*.unidades' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
+            'items.*.monto' => ['required', 'numeric', 'min:0', 'max:9999999999.99', 'regex:/^\d{1,10}(\.\d{1,2})?$/'],
             'fecha_despachada' => ['nullable', 'date'],
             'empresa' => ['nullable', 'string', 'max:180'],
             'nit' => ['nullable', 'string', 'max:50'],
@@ -120,36 +158,45 @@ class DonacionController extends Controller
             'telefono' => ['nullable', 'string', 'max:50'],
             'correo' => ['nullable', 'email', 'max:150'],
 
-            'unidades' => ['nullable', 'integer', 'min:0'],
             'descripcion' => ['nullable', 'string'],
-            'valor_total_donacion' => ['nullable', 'numeric', 'min:0'],
 
             'id_ubicacion' => ['nullable', 'integer'],
             'fecha_recibe' => ['nullable', 'date'],
             'quien_recibe' => ['nullable', 'string', 'max:120'],
             'id_tipo_donacion' => ['nullable', 'integer'],
-            'unidades_entrega' => ['nullable', 'integer', 'min:0'],
             'persona_gestiono' => ['nullable', 'string', 'max:120'],
 
-            'precio_mercado_unidad' => ['nullable', 'numeric', 'min:0'],
-            'total_mercado' => ['nullable', 'numeric', 'min:0'],
-            'referencia_mercado' => ['nullable', 'string', 'max:180'],
             'costo_logistica' => ['nullable', 'numeric', 'min:0'],
             'descripcion_logistica' => ['nullable', 'string'],
 
-            'id_proyecto' => ['nullable', 'integer'],
             'impacto_personas' => ['nullable', 'integer', 'min:0'],
             'comentarios' => ['nullable', 'string'],
 
             'recibo_empresa' => ['nullable', 'in:0,1'],
-            'ref_osshp' => ['nullable', 'string', 'max:80'],
-            'fecha_ref_osshp' => ['nullable', 'date'],
+            'ref_osshp' => ['exclude_unless:recibo_empresa,1', 'nullable', 'string', 'max:80'],
+            'fecha_ref_osshp' => ['exclude_unless:recibo_empresa,1', 'nullable', 'date'],
             'ref_sat' => ['nullable', 'string', 'max:80'],
-            'fecha_ref_sat' => ['nullable', 'date'],
+            'fecha_ref_sat' => ['exclude_unless:recibo_empresa,1', 'nullable', 'date'],
         ]);
 
-        $donacion->fill($data);
-        $donacion->save();
+        $data['recibo_empresa'] = (string) $request->input('recibo_empresa') === '1' ? 1 : 0;
+        $items = $this->prepararItems($data);
+        $guardados = [];
+        try {
+            DB::transaction(function () use ($id, $data, $items, $request, &$guardados) {
+                $actual = Donacion::where('id_donacion', $id)->lockForUpdate()->firstOrFail();
+                abort_if((int) $actual->bloqueado === 1, 403, 'Este registro está bloqueado.');
+                $actual->fill($data)->save();
+                $actual->detalles()->delete();
+                $actual->detalles()->createMany($items);
+                if ($data['recibo_empresa'] === 1) {
+                    DocumentosDonacion::guardar($id, $request, $guardados);
+                }
+            });
+        } catch (\Throwable $error) {
+            DocumentosDonacion::limpiar($guardados);
+            throw $error;
+        }
 
         return redirect()->route('donaciones.index')->with('success', 'Donación actualizada.');
     }
@@ -167,13 +214,21 @@ class DonacionController extends Controller
             return back()->with('error', 'Este registro está bloqueado. No se puede modificar ni eliminar.');
         }
 
-        $donacion->delete();
+        $rutas = DB::transaction(function () use ($id) {
+            $actual = Donacion::where('id_donacion', $id)->lockForUpdate()->firstOrFail();
+            abort_if((int) $actual->bloqueado === 1, 403, 'Este registro está bloqueado.');
+            $rutas = DocumentosDonacion::listar($id)->pluck('ruta')->all();
+            $actual->delete();
+            return $rutas;
+        });
+        DocumentosDonacion::limpiar($rutas);
 
         return redirect()->route('donaciones.index')->with('success', 'Donación eliminada.');
     }
 
     public function show($id)
     {
+        $request = request();
         $donacion = DB::table('donaciones as d')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
             ->leftJoin('ubicaciones as u', 'u.id_ubicacion', '=', 'd.id_ubicacion')
@@ -188,8 +243,17 @@ class DonacionController extends Controller
             ->first();
 
         abort_if(!$donacion, 404);
+        if ($request->filled('documento')) {
+            return DocumentosDonacion::abrir($id, (string) $request->query('documento'));
+        }
+        $documentos = DocumentosDonacion::listar($id);
+        $detalles = ReporteDonaciones::detalles($id);
+        if ($detalles->isNotEmpty()) {
+            $donacion->tipo_donacion = $detalles->pluck('tipo_donacion')->unique()->implode(', ');
+            $donacion->proyecto = $detalles->pluck('proyecto')->unique()->implode(', ');
+        }
 
-        return view('donaciones.show', compact('donacion'));
+        return view('donaciones.show', compact('donacion', 'detalles', 'documentos'));
     }
 
     public function index(Request $request)
@@ -200,7 +264,7 @@ class DonacionController extends Controller
         $tipo     = $request->get('tipo');      // id_tipo_donacion
         $proyecto = $request->get('proyecto');  // id_proyecto
 
-        $base = DB::table('donaciones as d')
+        $base = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'd.id_usuario')
             ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'd.id_ubicacion')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
@@ -220,57 +284,27 @@ class DonacionController extends Controller
 
         if ($from) $base->whereDate('d.fecha_despachada', '>=', $from);
         if ($to) $base->whereDate('d.fecha_despachada', '<=', $to);
-        if ($tipo) $base->where('d.id_tipo_donacion', $tipo);
-        if ($proyecto) $base->where('d.id_proyecto', $proyecto);
+
+
 
         // ===== STATS PARA CARDS (respetan filtros) =====
         $stats = (clone $base)
             ->selectRaw('
                 COUNT(DISTINCT d.id_donacion) AS total_donaciones,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total_dinero,
+                COALESCE(SUM(CAST(COALESCE(dm.monto, d.valor_total_donacion) AS DECIMAL(12,2))), 0) AS total_dinero,
                 COALESCE(SUM(CAST(d.impacto_personas AS UNSIGNED)), 0) AS total_impacto
             ')
             ->first();
 
         // ===== TABLA RESUMEN POR TIPO (respetan filtros) =====
-        $resumenTipos = (clone $base)
-            ->whereNotNull('td.nombre')
-            ->whereNotNull('d.valor_total_donacion')
-            ->whereRaw("CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0")
-            ->groupBy('d.id_tipo_donacion', 'td.nombre')
-            ->selectRaw("
-                td.nombre AS tipo,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total
-            ")
-            ->orderByDesc('total')
-            ->get();
+        $resumenTipos = ReporteDonaciones::resumen($base, $tipo, $proyecto);
 
         $totalGeneralTipos = $resumenTipos->sum('total');
 
         // ===== GRÁFICAS (respetan filtros) =====
-        $porTipo = (clone $base)
-            ->whereNotNull('td.nombre')
-            ->whereNotNull('d.valor_total_donacion')
-            ->whereRaw("CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0")
-            ->groupBy('d.id_tipo_donacion', 'td.nombre')
-            ->selectRaw("
-                td.nombre AS label,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total
-            ")
-            ->orderByDesc('total')
-            ->get();
+        $porTipo = $resumenTipos->map(fn ($r) => (object) ['label' => $r->tipo, 'total' => $r->total]);
 
-        $porProyecto = (clone $base)
-            ->whereNotNull('p.nombre')
-            ->whereNotNull('d.valor_total_donacion')
-            ->whereRaw("CAST(d.valor_total_donacion AS DECIMAL(12,2)) > 0")
-            ->groupBy('d.id_proyecto', 'p.nombre')
-            ->selectRaw("
-                p.nombre AS label,
-                COALESCE(SUM(CAST(d.valor_total_donacion AS DECIMAL(12,2))), 0) AS total
-            ")
-            ->orderByDesc('total')
-            ->get();
+        $porProyecto = ReporteDonaciones::porProyecto($base, $tipo, $proyecto);
 
         // ===== LISTADO =====
         $donaciones = (clone $base)
@@ -280,10 +314,10 @@ class DonacionController extends Controller
                 'd.empresa',
                 'd.nit',
                 'd.contacto',
-                'd.valor_total_donacion',
+                DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as valor_total_donacion"),
                 'ub.nombre as ubicacion',
-                'td.nombre as tipo_donacion',
-                'p.nombre as proyecto',
+                DB::raw("COALESCE(dm.tipos, td.nombre, 'Sin clasificar') as tipo_donacion"),
+                DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') as proyecto"),
                 'd.impacto_personas',
                 DB::raw("CONCAT(u.nombre,' ',u.apellido) as usuario"),
                 'd.bloqueado as bloqueado',
@@ -319,6 +353,10 @@ class DonacionController extends Controller
 public function exportExcel(Request $request)
 {
     $rows = $this->buildExportQueryAll($request)->get();
+        $rows->each(function ($row) {
+            $row->valor_total_donacion = $row->monto_reporte;
+            unset($row->monto_reporte);
+        });
 
     if ($rows->isEmpty()) {
         return back()->with('error', 'No hay datos para exportar.');
@@ -382,32 +420,7 @@ public function exportExcel(Request $request)
         return back()->with('error', 'No hay datos para exportar.');
     }
 
-    $totalGeneral = DB::table('donaciones as d')
-        ->when($request->filled('q'), function ($query) use ($request) {
-            $q = trim($request->q);
-
-            $query->where(function ($w) use ($q) {
-                $w->where('d.empresa', 'like', "%{$q}%")
-                  ->orWhere('d.nit', 'like', "%{$q}%")
-                  ->orWhere('d.contacto', 'like', "%{$q}%")
-                  ->orWhere('d.quien_recibe', 'like', "%{$q}%")
-                  ->orWhere('d.ref_osshp', 'like', "%{$q}%")
-                  ->orWhere('d.ref_sat', 'like', "%{$q}%");
-            });
-        })
-        ->when($request->filled('from'), function ($query) use ($request) {
-            $query->whereDate('d.fecha_despachada', '>=', $request->from);
-        })
-        ->when($request->filled('to'), function ($query) use ($request) {
-            $query->whereDate('d.fecha_despachada', '<=', $request->to);
-        })
-        ->when($request->filled('tipo'), function ($query) use ($request) {
-            $query->where('d.id_tipo_donacion', $request->tipo);
-        })
-        ->when($request->filled('proyecto'), function ($query) use ($request) {
-            $query->where('d.id_proyecto', $request->proyecto);
-        })
-        ->sum('d.valor_total_donacion');
+    $totalGeneral = $donaciones->sum('valor_total_donacion');
 
     $totalImpacto = $donaciones->sum('impacto_personas');
 
@@ -434,7 +447,7 @@ public function exportExcel(Request $request)
         $tipo     = $request->get('tipo');
         $proyecto = $request->get('proyecto');
 
-        $base = DB::table('donaciones as d')
+        $base = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'd.id_usuario')
             ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'd.id_ubicacion')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
@@ -453,8 +466,8 @@ public function exportExcel(Request $request)
 
         if ($from) $base->whereDate('d.fecha_despachada', '>=', $from);
         if ($to) $base->whereDate('d.fecha_despachada', '<=', $to);
-        if ($tipo) $base->where('d.id_tipo_donacion', $tipo);
-        if ($proyecto) $base->where('d.id_proyecto', $proyecto);
+
+
 
         return $base->select(
             'd.id_donacion',
@@ -462,10 +475,10 @@ public function exportExcel(Request $request)
             'd.empresa',
             'd.nit',
             'd.contacto',
-            'd.valor_total_donacion',
+            DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as valor_total_donacion"),
             'ub.nombre as ubicacion',
-            'td.nombre as tipo_donacion',
-            'p.nombre as proyecto',
+            DB::raw("COALESCE(dm.tipos, td.nombre, 'Sin clasificar') as tipo_donacion"),
+            DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') as proyecto"),
            // DB::raw("CONCAT(u.nombre,' ',u.apellido) as usuario"),
             'd.persona_gestiono',
             'd.impacto_personas',
@@ -485,7 +498,7 @@ public function exportExcel(Request $request)
         $tipo     = $request->get('tipo');
         $proyecto = $request->get('proyecto');
 
-        $base = DB::table('donaciones as d')
+        $base = ReporteDonaciones::base($tipo, $proyecto)
             ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'd.id_usuario')
             ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'd.id_ubicacion')
             ->leftJoin('tipos_donacion as td', 'td.id_tipo_donacion', '=', 'd.id_tipo_donacion')
@@ -504,15 +517,16 @@ public function exportExcel(Request $request)
 
         if ($from) $base->whereDate('d.fecha_despachada', '>=', $from);
         if ($to) $base->whereDate('d.fecha_despachada', '<=', $to);
-        if ($tipo) $base->where('d.id_tipo_donacion', $tipo);
-        if ($proyecto) $base->where('d.id_proyecto', $proyecto);
+
+
 
         return $base->select([
                 'd.*',
+                DB::raw("COALESCE(dm.monto, d.valor_total_donacion) as monto_reporte"),
                 DB::raw("CONCAT(u.nombre,' ',u.apellido) AS usuario_nombre"),
                 'ub.nombre AS ubicacion_nombre',
-                'td.nombre AS tipo_donacion_nombre',
-                'p.nombre AS proyecto_nombre',
+                DB::raw("COALESCE(dm.tipos, td.nombre, 'Sin clasificar') AS tipo_donacion_nombre"),
+                DB::raw("COALESCE(dm.proyectos, p.nombre, 'Sin proyecto') AS proyecto_nombre"),
             ])
             ->orderByDesc('d.id_donacion');
     }
@@ -536,8 +550,13 @@ public function exportExcel(Request $request)
             ->first();
 
         abort_if(!$donacion, 404);
+        $detalles = ReporteDonaciones::detalles($id);
+        if ($detalles->isNotEmpty()) {
+            $donacion->tipo_donacion = $detalles->pluck('tipo_donacion')->unique()->implode(', ');
+            $donacion->proyecto = $detalles->pluck('proyecto')->unique()->implode(', ');
+        }
 
-        $pdf = Pdf::loadView('donaciones.pdf', ['donacion' => $donacion])
+        $pdf = Pdf::loadView('donaciones.pdf', ['donacion' => $donacion, 'detalles' => $detalles])
             ->setPaper('a4', 'portrait');
 
         return $pdf->stream("acta-donacion-{$donacion->id_donacion}.pdf");
@@ -564,4 +583,43 @@ public function exportExcel(Request $request)
         return in_array($rolName, ['ADMIN', 'GESTOR', 'DONACIONES', 'SECRETARIA'], true);
     }
 
+
+    /** Calculate exact cents and persist only validated item fields. */
+    private function prepararItems(array &$data): array
+    {
+        $items = [];
+        $centavos = 0;
+        $unidades = 0;
+        $hayUnidades = false;
+        foreach ($data['items'] as $item) {
+            $partes = explode('.', (string) $item['monto'], 2);
+            $monto = ((int) $partes[0] * 100) + (int) str_pad($partes[1] ?? '', 2, '0');
+            $centavos += $monto;
+            $cantidad = isset($item['unidades']) && $item['unidades'] !== '' ? (int) $item['unidades'] : null;
+            $hayUnidades = $hayUnidades || $cantidad !== null;
+            $unidades += $cantidad ?? 0;
+            $items[] = [
+                'id_tipo_donacion' => (int) $item['id_tipo_donacion'],
+                'id_proyecto' => (int) $item['id_proyecto'],
+                'descripcion' => $item['descripcion'] ?? null,
+                'unidades' => $cantidad,
+                'monto' => intdiv($monto, 100) . '.' . str_pad((string) ($monto % 100), 2, '0', STR_PAD_LEFT),
+            ];
+        }
+        if ($centavos > 999999999999 || $unidades > 4294967295) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'items' => 'El total de montos o unidades excede la capacidad del registro.',
+            ]);
+        }
+        unset($data['items']);
+        $data['valor_total_donacion'] = intdiv($centavos, 100) . '.' . str_pad((string) ($centavos % 100), 2, '0', STR_PAD_LEFT);
+        $data['unidades'] = $hayUnidades ? $unidades : null;
+        $data['unidades_entrega'] = $data['unidades'];
+        // For a mixed receipt there is no single parent category.
+        $tipos = array_unique(array_column($items, 'id_tipo_donacion'));
+        $data['id_tipo_donacion'] = count($tipos) === 1 ? reset($tipos) : null;
+        $proyectos = array_unique(array_column($items, 'id_proyecto'));
+        $data['id_proyecto'] = count($proyectos) === 1 ? reset($proyectos) : null;
+        return $items;
+    }
 }

@@ -930,3 +930,56 @@ ADD COLUMN lugar_ingreso VARCHAR(100) NULL AFTER institucion_examen;
 
 ALTER TABLE movimientos_financieros
 ADD bloqueado TINYINT(1) NOT NULL DEFAULT 1;
+
+
+
+CREATE TABLE IF NOT EXISTS donacion_detalles (
+    id_detalle INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_donacion INT UNSIGNED NOT NULL,
+    id_tipo_donacion INT UNSIGNED NOT NULL,
+    descripcion TEXT NULL,
+    unidades INT UNSIGNED NULL,
+    monto DECIMAL(12,2) NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT NULL,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (id_detalle),
+    INDEX idx_det_donacion_tipo (id_donacion, id_tipo_donacion),
+    INDEX idx_det_tipo (id_tipo_donacion),
+    CONSTRAINT fk_det_donacion FOREIGN KEY (id_donacion)
+        REFERENCES donaciones(id_donacion) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_det_tipo FOREIGN KEY (id_tipo_donacion)
+        REFERENCES tipos_donacion(id_tipo_donacion) ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+CREATE TABLE IF NOT EXISTS donacion_documentos (
+    id_documento CHAR(36) NOT NULL,
+    id_donacion INT UNSIGNED NOT NULL,
+    tipo ENUM('osshp', 'sat') NOT NULL,
+    ruta VARCHAR(255) NOT NULL,
+    nombre VARCHAR(200) NOT NULL,
+    mime VARCHAR(100) NOT NULL,
+    tamano BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (id_documento),
+    INDEX idx_documentos_donacion (id_donacion, tipo),
+    CONSTRAINT fk_documentos_donacion FOREIGN KEY (id_donacion)
+        REFERENCES donaciones(id_donacion) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Ejecutar UNA VEZ, sobre la versión con donacion_detalles ya instalada.
+-- Hacer respaldo y aplicar con la aplicación en mantenimiento.
+ALTER TABLE donacion_detalles
+    ADD COLUMN id_proyecto INT UNSIGNED NULL AFTER id_tipo_donacion,
+    ADD INDEX idx_det_proyecto (id_proyecto),
+    ADD CONSTRAINT fk_det_proyecto FOREIGN KEY (id_proyecto)
+        REFERENCES proyectos(id_proyecto) ON UPDATE CASCADE ON DELETE SET NULL;
+
+-- Los detalles existentes heredan el proyecto actual de su recibo.
+-- No cambia montos, unidades, tipos, documentos ni impacto.
+UPDATE donacion_detalles AS dd
+INNER JOIN donaciones AS d ON d.id_donacion = dd.id_donacion
+SET dd.id_proyecto = d.id_proyecto
+WHERE dd.id_proyecto IS NULL;
