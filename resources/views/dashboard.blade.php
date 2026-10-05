@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-  // Blindaje total
+  // Blindaje total  
   $donaciones = $donaciones ?? collect();
   $tipos = $tipos ?? collect();
   $proyectos = $proyectos ?? collect();
