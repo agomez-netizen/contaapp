@@ -332,7 +332,16 @@ $crowOpen = request()->routeIs('cooperantes.*');
 
         @endif
 
-         @if($isAdmin || $isGestor || $isProyectos )
+         @if($isAdmin || $isGestor || $isProyectos || $isSecretaria )
+
+          <!--  <a href=" {--{ route('oficina.rambla.index') }}"
+               class="navitem {--{ request()->routeIs('oficina.rambla.*') ? 'active' : '' }}"
+               title="Documentos de Oficina Rambla">
+
+                <span class="navicon">📋</span>
+                <span>Oficina Rambla</span>
+
+            </a> -->
         <a href="{{ route('contactos.index') }}"
            class="navitem {{ request()->routeIs('contactos.*') ? 'active' : '' }}"
            title="Contactos">
