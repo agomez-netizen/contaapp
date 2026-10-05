@@ -27,9 +27,12 @@
     @endif
 
     <div class="card shadow-sm border-0">
+
+
         <div class="card-header bg-white">
             <h5 class="mb-0">Nuevo Movimiento</h5>
         </div>
+    
 
         <div class="card-body">
             <form action="{{ route('finanzas.store') }}"

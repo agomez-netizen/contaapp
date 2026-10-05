@@ -20,9 +20,12 @@
                 Exportar Excel
             </a>
 
-            <a href="{{ route('finanzas.index') }}" class="btn btn-primary">
-                Nuevo Movimiento
-            </a>
+@if(session()->has('user') && strtoupper(trim(session('user.rol', ''))) !== 'SECRETARIA')
+    <a href="{{ route('finanzas.index') }}" class="btn btn-primary">
+        Nuevo Movimiento
+    </a>
+@endif
+
         </div>
     </div>
 
